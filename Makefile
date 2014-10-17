@@ -27,8 +27,7 @@ doc:
 	$(REBAR) skip_deps=true doc
 
 test: all
-	$(REBAR) ct
-	./run_tests.sh
+	./rebar ct
 
 $(DEPS_PLT):
 	@echo Building local plt at $(DEPS_PLT)
