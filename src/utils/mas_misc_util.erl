@@ -39,25 +39,27 @@ generate_population(SP, Cf) ->
     [Env:initial_agent(SP) || _ <- lists:seq(1, Cf#config.population_size)].
 
 
--spec meeting_proxy({atom(), list()}, model(), sim_params(), config()) -> list().
-meeting_proxy({migration, _Agents}, sequential, _SimParams, _Config) ->
+-spec meeting_proxy({agent_behaviour(), [agent()]}, model(),
+                    sim_params(), config()) -> [agent()].
+meeting_proxy({migration, _Agents}, mas_sequential, _SimParams, _Config) ->
     [];
 
-meeting_proxy({migration, Agents}, hybrid, _SimParams, _Config) ->
+meeting_proxy({migration, Agents}, mas_hybrid, _SimParams, _Config) ->
     [mas_hybrid:sendAgent(Agent) || Agent <- Agents],
     [];
 
-meeting_proxy({migration, _Agents}, concurrent, _SimParams, _Config) ->
+meeting_proxy({migration, _Agents}, mas_concurrent, _SimParams, _Config) ->
     [];
 
-meeting_proxy({migration, Agents}, skel, _SimParams, _Config) ->
+meeting_proxy({migration, Agents}, mas_skel, _SimParams, _Config) ->
     Agents;
 
 meeting_proxy(Group, _, SP, #config{agent_env = Env}) ->
     Env:meeting_function(Group, SP).
 
 
--spec behaviour_proxy(agent(), sim_params(), config()) -> agent_behaviour() | migration.
+-spec behaviour_proxy(agent(), sim_params(), config())
+                     -> agent_behaviour() | migration.
 behaviour_proxy(Agent, SP, #config{migration_probability = MP, agent_env = Env}) ->
     case random:uniform() < MP of
         true -> migration;

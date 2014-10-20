@@ -49,7 +49,7 @@ loop(Agents, InteractionCounter, Funstats, SP, Cf) ->
             Agents
     after 0 ->
             Groups = mas_misc_util:group_by([{mas_misc_util:behaviour_proxy(A, SP, Cf), A} || A <- Agents ]),
-            NewGroups = [mas_misc_util:meeting_proxy(G, hybrid, SP, Cf) || G <- Groups],
+            NewGroups = [mas_misc_util:meeting_proxy(G, mas_hybrid, SP, Cf) || G <- Groups],
             NewAgents = mas_misc_util:shuffle(lists:flatten(NewGroups)),
 
             NewFunstats = mas_misc_util:count_funstats(NewAgents, Funstats),

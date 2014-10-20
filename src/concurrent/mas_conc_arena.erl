@@ -86,9 +86,9 @@ handle_call({interact, _Agent}, _From, cleaning) ->
 handle_call({interact, Agent}, From, St = #state{sim_params = SP, config = Cf}) ->
     Waitlist = [Agent|St#state.waitlist],
     Froms = [From|St#state.agentFroms],
-    case length(Waitlist)  of
+    case length(Waitlist) of
         ?AGENT_THRESHOLD ->
-            NewAgents = mas_misc_util:meeting_proxy({St#state.interaction, Waitlist}, concurrent, SP, Cf),
+            NewAgents = mas_misc_util:meeting_proxy({St#state.interaction, Waitlist}, mas_concurrent, SP, Cf),
             respond(NewAgents, Froms, St#state.arenas, SP, Cf),
 
             NewCounter = St#state.counter + length(Waitlist), % tu blad?!

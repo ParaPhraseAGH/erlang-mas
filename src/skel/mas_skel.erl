@@ -73,7 +73,7 @@ main(Population, Time, SP, Cf) ->
     Work = {seq, fun({{Home, Behaviour}, Agents}) ->
                      seed_random_once_per_process(),
                      NewAgents =
-                         mas_misc_util:meeting_proxy({Behaviour, Agents}, skel, SP, Cf),
+                         mas_misc_util:meeting_proxy({Behaviour, Agents}, mas_skel, SP, Cf),
                      [{Home, A} || A <- NewAgents]
                  end },
 

@@ -53,7 +53,7 @@ loop(Islands, Counters, Funstats, SP, Cf) ->
     after 0 ->
             Groups = [mas_misc_util:group_by([{mas_misc_util:behaviour_proxy(Agent, SP, Cf), Agent} || Agent <- I]) || I <- Islands],
             Emigrants = [seq_migrate(lists:keyfind(migration, 1, Island), Nr) || {Island, Nr} <- lists:zip(Groups, lists:seq(1, length(Groups)))],
-            NewGroups = [[mas_misc_util:meeting_proxy(Activity, sequential, SP, Cf) || Activity <- I] || I <- Groups],
+            NewGroups = [[mas_misc_util:meeting_proxy(Activity, mas_sequential, SP, Cf) || Activity <- I] || I <- Groups],
             WithEmigrants = append(lists:flatten(Emigrants), NewGroups),
             NewIslands = [mas_misc_util:shuffle(lists:flatten(I)) || I <- WithEmigrants],
 
