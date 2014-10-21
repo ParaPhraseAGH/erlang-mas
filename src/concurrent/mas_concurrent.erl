@@ -9,11 +9,13 @@
 -define(RESULT_SINK, result_sink).
 -define(RESULT_SINK_TIMEOUT, 2500).
 
+-type agent() :: mas:agent().
+
 %% ====================================================================
 %% API functions
 %% ====================================================================
 
--spec start(Time::pos_integer(), mas:sim_params(), config()) -> ok.
+-spec start(Time::pos_integer(), mas:sim_params(), config()) -> [agent()].
 start(Time, SP, Cf = #config{islands = Islands}) ->
 %%     io:format("{Model=Concurrent,Time=~p,Islands=~p,Topology=~p}~n",[Time,Islands,Topology]),
     mas_misc_util:clear_inbox(),
@@ -33,9 +35,10 @@ start(Time, SP, Cf = #config{islands = Islands}) ->
     unregister(?RESULT_SINK),
     Agents.
 
--spec send_result(mas:agent()) -> ok.
+-spec send_result(agent()) -> ok.
 send_result(Agent) ->
-    whereis(?RESULT_SINK) ! {result, Agent}.
+    whereis(?RESULT_SINK) ! {result, Agent},
+    ok.
 
 %% ====================================================================
 %% Internal functions
@@ -45,9 +48,11 @@ send_result(Agent) ->
 trigger(Supervisors) ->
     [mas_conc_supervisor:go(Pid) || Pid <- Supervisors].
 
+-spec receive_results() -> [agent()].
 receive_results() ->
     receive_results([]).
 
+-spec receive_results([agent()]) -> [agent()].
 receive_results(Acc) ->
     receive
         {result, Agent} ->

@@ -35,7 +35,8 @@ start(Time, SP, Cf = #config{islands = Islands, agent_env = Env}) ->
 %% ====================================================================
 
 %% @doc Main program loop
--spec main([tuple()], non_neg_integer(), sim_params(), config()) -> float().
+-spec main([{pos_integer(), mas:agent()}],
+           non_neg_integer(), sim_params(), config()) -> [mas:agent()].
 main(Population, Time, SP, Cf) ->
     EndTime = mas_misc_util:add_miliseconds(os:timestamp(), Time),
     Workers = Cf#config.skel_workers,
@@ -73,7 +74,7 @@ main(Population, Time, SP, Cf) ->
     Work = {seq, fun({{Home, Behaviour}, Agents}) ->
                      seed_random_once_per_process(),
                      NewAgents =
-                         mas_misc_util:meeting_proxy({Behaviour, Agents}, skel, SP, Cf),
+                         mas_misc_util:meeting_proxy({Behaviour, Agents}, mas_skel, SP, Cf),
                      [{Home, A} || A <- NewAgents]
                  end },
 
@@ -136,7 +137,7 @@ log_funstats(Groups, Cf) ->
     ok.
 
 
-
+-spec seed_random_once_per_process() -> ok.
 seed_random_once_per_process() ->
     case get(was_seeded) of
         undefined ->

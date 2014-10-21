@@ -9,13 +9,14 @@
 
 -type agent() :: mas:agent().
 -type sim_params() :: mas:sim_params().
+-type arenas() :: mas_conc_supervisor:arenas().
 
 %% ====================================================================
 %% API functions
 %% ====================================================================
 
 %% @doc Initializes given agent on arenas given as parameter
--spec start(agent(), dict:dict(string(), pid()), sim_params(), config()) -> ok.
+-spec start(agent(), arenas(), sim_params(), config()) -> ok.
 start(Agent, Arenas, SP, Cf) ->
     mas_misc_util:seed_random(),
     loop(Agent, Arenas, SP, Cf).
@@ -25,7 +26,7 @@ start(Agent, Arenas, SP, Cf) ->
 %% ====================================================================
 
 %% @doc Defines a life cycle of a single agent
--spec loop(agent(), dict:dict(), sim_params(), config()) -> ok.
+-spec loop(agent(), arenas(), sim_params(), config()) -> ok.
 loop(Agent, Arenas, SP, Cf) ->
     case mas_misc_util:behaviour_proxy(Agent, SP, Cf) of
         migration ->

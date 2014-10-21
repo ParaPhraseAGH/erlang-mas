@@ -38,7 +38,7 @@ start(Time, SP, Cf = #config{islands = Islands, agent_env = Env}) ->
 %% ====================================================================
 
 %% @doc The main island process loop. A new generation of the population is created in every iteration.
--spec loop([island()], [counter()], [funstat()], sim_params(), config()) -> float().
+-spec loop([island()], [counter()], [funstat()], sim_params(), config()) -> [agent()].
 loop(Islands, Counters, Funstats, SP, Cf) ->
     receive
         write ->
@@ -53,7 +53,7 @@ loop(Islands, Counters, Funstats, SP, Cf) ->
     after 0 ->
             Groups = [mas_misc_util:group_by([{mas_misc_util:behaviour_proxy(Agent, SP, Cf), Agent} || Agent <- I]) || I <- Islands],
             Emigrants = [seq_migrate(lists:keyfind(migration, 1, Island), Nr) || {Island, Nr} <- lists:zip(Groups, lists:seq(1, length(Groups)))],
-            NewGroups = [[mas_misc_util:meeting_proxy(Activity, sequential, SP, Cf) || Activity <- I] || I <- Groups],
+            NewGroups = [[mas_misc_util:meeting_proxy(Activity, mas_sequential, SP, Cf) || Activity <- I] || I <- Groups],
             WithEmigrants = append(lists:flatten(Emigrants), NewGroups),
             NewIslands = [mas_misc_util:shuffle(lists:flatten(I)) || I <- WithEmigrants],
 
@@ -78,7 +78,7 @@ seq_migrate({migration,Agents},From) ->
     mas_misc_util:group_by(Destinations).
 
 
--spec append({pos_integer(),[agent()]}, [list(agent())]) -> [list(agent())].
+-spec append([{pos_integer(),[agent()]}], [list(agent())]) -> [list(agent())].
 append([],Islands) ->
     Islands;
 

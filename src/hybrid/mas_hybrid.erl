@@ -21,7 +21,7 @@
 %% ====================================================================
 %% API functions
 %% ====================================================================
--spec start(Time::pos_integer(), sim_params(), config()) -> ok.
+-spec start(Time::pos_integer(), sim_params(), config()) -> [agent()].
 start(Time, SP, Cf) ->
 %%     io:format("{Model=Hybrid,Time=~p,Islands=~p,Topology=~p}~n",[Time,Islands,Topology]),
     {ok, _} = gen_server:start({local,?MODULE}, ?MODULE, [Time, SP, Cf], []),
@@ -38,7 +38,8 @@ sendAgent(Agent) ->
 %% @doc Asynchronously send back result from an island
 -spec send_result([agent()]) -> ok.
 send_result(Agents) ->
-    whereis(?RESULT_SINK) ! {result, Agents}.
+    whereis(?RESULT_SINK) ! {result, Agents},
+    ok.
 
 %% ====================================================================
 %% Callbacks
