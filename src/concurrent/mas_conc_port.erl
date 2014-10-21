@@ -16,6 +16,7 @@
 -include("mas.hrl").
 
 -type agent() :: mas:agent().
+-type arenas() :: mas_conc_supervisor:arenas().
 
 %% ====================================================================
 %% API functions
@@ -24,7 +25,7 @@
 start_link(Supervisor, Cf) ->
     gen_server:start_link(?MODULE, [Supervisor, Cf], []).
 
--spec giveArenas(pid(), dict:dict()) -> ok.
+-spec giveArenas(pid(), arenas()) -> ok.
 giveArenas(Pid, Arenas) ->
     gen_server:call(Pid, {arenas, Arenas}).
 
@@ -32,8 +33,8 @@ giveArenas(Pid, Arenas) ->
 immigrate(Pid, AgentInfo) ->
     gen_server:cast(Pid, {immigrant, AgentInfo}).
 
-%% @doc Funkcja wysylajaca zgloszenie agenta do portu.
--spec emigrate(pid(), agent()) -> [pid()].
+%% @doc Sends a request with an agent to the port.
+-spec emigrate(pid(), agent()) -> arenas().
 emigrate(Pid, Agent) ->
     gen_server:call(Pid, {emigrate, Agent}, infinity).
 
@@ -45,7 +46,7 @@ close(Pid) ->
 %% Callbacks
 %% ====================================================================
 -record(state, {mySupervisor :: pid(),
-                arenas :: dict:dict(),
+                arenas :: arenas(),
                 funstats :: [funstat()],
                 emigrants = [] :: [pid()],
                 immigrants = [] :: [{pid(),agent()}],

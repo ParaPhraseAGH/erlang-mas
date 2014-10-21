@@ -11,8 +11,10 @@
 %% gen_server
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2,
          code_change/3]).
+-export_type([arenas/0]).
 
 -type sim_params() :: mas:sim_params().
+-type arenas() :: dict:dict(mas:agent_behaviour(), pid()).
 
 %% ====================================================================
 %% API functions
@@ -33,7 +35,7 @@ close(Pid) ->
 %% ====================================================================
 %% Callbacks
 %% ====================================================================
--record(state, {arenas  = dict:new() :: dict:dict(),
+-record(state, {arenas  = dict:new() :: arenas(),
                 sim_params :: sim_params(),
                 config :: config()}).
 -type state() :: #state{}.

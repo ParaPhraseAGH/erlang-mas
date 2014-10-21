@@ -26,6 +26,7 @@
 
 -type agent() :: mas:agent().
 -type sim_params() :: mas:sim_params().
+-type arenas() :: mas_conc_supervisor:arenas().
 
 %%%===================================================================
 %%% API
@@ -41,11 +42,11 @@ start_link(Supervisor, Interaction, SP, Cf) ->
     Pid.
 
 %% @doc Sends a request with given agent to this arena
--spec call(pid(),agent()) -> agent() | close.
+-spec call(pid(), agent()) -> agent() | close.
 call(Pid, Agent) ->
     gen_server:call(Pid, {interact, Agent}, infinity).
 
--spec giveArenas(pid(),dict:dict()) -> ok.
+-spec giveArenas(pid(), arenas()) -> ok.
 giveArenas(Pid, Arenas) ->
     gen_server:call(Pid, {arenas, Arenas}, infinity).
 
@@ -147,7 +148,7 @@ code_change(_OldVsn, State, _Extra) ->
 %%% Internal functions
 %%%===================================================================
 
--spec respond([agent()], {pid(), term()}, dict:dict(), sim_params(), config()) -> list().
+-spec respond([agent()], [pid()], arenas(), sim_params(), config()) -> list().
 respond(Agents, Froms, Arenas, SP, Cf) when length(Agents) >= length(Froms) ->
     [gen_server:reply(From, Agent) || {From, Agent} <- mas_misc_util:shortest_zip(Froms, Agents)],
     [spawn(mas_conc_agent, start, [Agent, Arenas, SP, Cf]) || Agent <- lists:nthtail(length(Froms), Agents)];
