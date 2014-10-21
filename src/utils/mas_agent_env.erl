@@ -8,9 +8,9 @@
 -type sim_params() :: mas:sim_params().
 -type agent_behaviour() :: mas:agent_behaviour().
 
--callback start(model(), pos_integer()) -> ok.
+-callback start(model(), pos_integer()) -> agent().
 
--callback initial_agent(sim_params()) -> [agent()].
+-callback initial_agent(sim_params()) -> agent().
 
 -callback behaviour_function(agent(), sim_params()) -> agent_behaviour().
 
