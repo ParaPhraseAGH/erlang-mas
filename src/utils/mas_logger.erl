@@ -19,14 +19,14 @@
 %% ====================================================================
 -spec start_link(list(), config()) -> {ok, pid()}.
 start_link(Keys, Config) ->
-    gen_server:start_link({local, ?MODULE}, ?MODULE, [Keys, Config], []).
+    gen_server:start_link({local, ?MODULE}, ?MODULE, {Keys, Config}, []).
 
--spec log_funstat(term(),atom(),term()) -> ok.
-log_funstat(Key,Stat,Value) ->
+-spec log_funstat(term(), atom(), term()) -> ok.
+log_funstat(Key, Stat, Value) ->
     gen_server:cast(whereis(?MODULE), {funstat, Key, Stat, Value}).
 
--spec log_countstat(term(),atom(),term()) -> ok.
-log_countstat(Key,Stat,Value) ->
+-spec log_countstat(term(), atom(), term()) -> ok.
+log_countstat(Key, Stat, Value) ->
     gen_server:cast(whereis(?MODULE), {countstat, Key, Stat, Value}).
 
 -spec close() -> ok.
@@ -46,8 +46,8 @@ close() ->
                 timeout = infinity :: infinity | non_neg_integer()}).
 -type state() :: #state{}.
 
--spec init(term()) -> {ok,state()}.
-init([Keys, Cf]) ->
+-spec init({list(), config()}) -> {ok, state(), infinity}.
+init({Keys, Cf}) ->
     self() ! delayTimerStart,
     Env = Cf#config.agent_env,
     Funstats = Env:stats(),
@@ -116,12 +116,13 @@ code_change(_OldVsn, State, _Extra) ->
 %%% Internal functions
 %%%===================================================================
 
--spec prepareDictionary([term()], dict:dict(), string(), [atom()]) -> dict:dict().
+-spec prepareDictionary([term()], dict:dict(), standard_io | string(), [atom()])
+                       -> dict:dict().
 prepareDictionary([], Dict, _Path, _Stats) ->
     Dict;
 
 prepareDictionary([Key|Rest], Dict, Path, Stats) ->
-    IslandPath = createDir(Path,length(Rest) + 1),
+    IslandPath = createDir(Path, length(Rest) + 1),
     NewDict = dict:store(Key, createFDs(IslandPath, dict:new(), Stats), Dict),
     prepareDictionary(Rest, NewDict, Path, Stats).
 
@@ -187,4 +188,3 @@ closeFiles(Dict) ->
          {Id, FD} when is_atom(Id) -> file:close(FD);
          {_Id, D} -> [file:close(FD) || {_Stat, FD} <- dict:to_list(D)]
      end || X <- dict:to_list(Dict)].
-

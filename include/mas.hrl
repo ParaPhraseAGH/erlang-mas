@@ -8,7 +8,7 @@
 
 -record(config, {agent_env :: atom(),
                  topology :: atom(),
-                 log_dir :: atom(),
+                 log_dir :: atom() | string(),
                  islands :: pos_integer(),
                  population_size :: pos_integer(),
                  migration_probability :: float(),
