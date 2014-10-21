@@ -57,9 +57,9 @@ close(Pid) ->
 %%% Callbacks
 %%%===================================================================
 
--spec(init(Args :: term()) -> {ok, State :: #state{}} |
+-spec init(Args :: term()) -> {ok, State :: #state{}} |
                               {ok, State :: #state{}, timeout() | hibernate} |
-                              {stop, Reason :: term()} | ignore).
+                              {stop, Reason :: term()} | ignore.
 init([Supervisor, Interaction, SP, Cf]) ->
     mas_misc_util:seed_random(),
     Env = Cf#config.agent_env,
@@ -72,13 +72,13 @@ init([Supervisor, Interaction, SP, Cf]) ->
                 config = Cf}, Cf#config.arena_timeout}.
 
 
--spec(handle_call(Request :: term(), From :: {pid(), Tag :: term()}, State :: #state{}) ->
+-spec handle_call(Request :: term(), From :: {pid(), Tag :: term()}, State :: #state{}) ->
              {reply, Reply :: term(), NewState :: #state{}} |
              {reply, Reply :: term(), NewState :: #state{}, timeout() | hibernate} |
              {noreply, NewState :: #state{}} |
              {noreply, NewState :: #state{}, timeout() | hibernate} |
              {stop, Reason :: term(), Reply :: term(), NewState :: #state{}} |
-             {stop, Reason :: term(), NewState :: #state{}}).
+             {stop, Reason :: term(), NewState :: #state{}}.
 
 handle_call({interact, _Agent}, _From, cleaning) ->
     {reply, the_end, cleaning, ?CLOSING_TIMEOUT};
@@ -116,30 +116,30 @@ handle_call({interact, Agent}, From, St = #state{sim_params = SP, config = Cf}) 
 handle_call({arenas, Arenas}, _From, St = #state{config = Cf}) ->
     {reply, ok, St#state{arenas = Arenas}, Cf#config.arena_timeout}.
 
--spec(handle_cast(Request :: term(), State :: #state{}) -> {noreply, NewState :: #state{}} |
+-spec handle_cast(Request :: term(), State :: #state{}) -> {noreply, NewState :: #state{}} |
                                                            {noreply, NewState :: #state{}, timeout() | hibernate} |
-                                                           {stop, Reason :: term(), NewState :: #state{}}).
+                                                           {stop, Reason :: term(), NewState :: #state{}}.
 handle_cast(close, _State) ->
     {noreply, cleaning, ?CLOSING_TIMEOUT}.
 
 
--spec(handle_info(Info :: timeout() | term(), State :: #state{}) -> {noreply, NewState :: #state{}} |
+-spec handle_info(Info :: timeout() | term(), State :: #state{}) -> {noreply, NewState :: #state{}} |
                                                                     {noreply, NewState :: #state{}, timeout() | hibernate} |
-                                                                    {stop, Reason :: term(), NewState :: #state{}}).
+                                                                    {stop, Reason :: term(), NewState :: #state{}}.
 handle_info(timeout, cleaning) ->
     {stop, normal, cleaning};
 
 handle_info(timeout, State) ->
     {stop, timeout, State}.
 
--spec(terminate(Reason :: (normal | shutdown | {shutdown, term()} | term()),
-                State :: #state{}) -> term()).
+-spec terminate(Reason :: (normal | shutdown | {shutdown, term()} | term()),
+                State :: #state{}) -> term().
 terminate(_Reason, _State) ->
     ok.
 
--spec(code_change(OldVsn :: term() | {down, term()}, State :: #state{},
+-spec code_change(OldVsn :: term() | {down, term()}, State :: #state{},
                   Extra :: term()) ->
-             {ok, NewState :: #state{}} | {error, Reason :: term()}).
+             {ok, NewState :: #state{}} | {error, Reason :: term()}.
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
 
