@@ -52,7 +52,7 @@ init({Keys, Cf}) ->
     Env = Cf#config.agent_env,
     Funstats = Env:stats(),
     Stats = mas_misc_util:determine_behaviours(Cf) ++ [Name || {Name, _MapFun, _ReduceFun, _InitVal} <- Funstats],
-    Dict = prepareDictionary(lists:reverse(Keys), dict:new(), Cf#config.log_dir, Stats),
+    Dict = prepare_dictionary(lists:reverse(Keys), dict:new(), Cf#config.log_dir, Stats),
     {ok, #state{fds = Dict,
                 funstats = Funstats,
                 counters = create_counter(Keys, Cf),
@@ -91,7 +91,7 @@ handle_cast({countstat, Key, Stat, Value}, St) ->
 handle_info(timer, St = #state{fds = FDs, counters = Counters, funstats = Funstats}) ->
     NewCounters = dict:map(fun(Key, CounterDict) ->
                                    FDDict = dict:fetch(Key, FDs),
-                                   logIsland(Key, dict:to_list(FDDict), CounterDict, Funstats)
+                                   log_island(Key, dict:to_list(FDDict), CounterDict, Funstats)
                            end, Counters),
     {noreply, St#state{counters = NewCounters}, St#state.timeout};
 
@@ -106,7 +106,7 @@ handle_info(timeout, St) ->
 
 -spec terminate(term(),state()) -> no_return().
 terminate(_Reason, St) ->
-    closeFiles(St#state.fds).
+    close_files(St#state.fds).
 
 -spec code_change(term(),state(),term()) -> {ok, state()}.
 code_change(_OldVsn, State, _Extra) ->
@@ -116,38 +116,38 @@ code_change(_OldVsn, State, _Extra) ->
 %%% Internal functions
 %%%===================================================================
 
--spec prepareDictionary([term()], dict:dict(), standard_io | string(), [atom()])
+-spec prepare_dictionary([term()], dict:dict(), standard_io | string(), [atom()])
                        -> dict:dict().
-prepareDictionary([], Dict, _Path, _Stats) ->
+prepare_dictionary([], Dict, _Path, _Stats) ->
     Dict;
 
-prepareDictionary([Key|Rest], Dict, Path, Stats) ->
-    IslandPath = createDir(Path, length(Rest) + 1),
-    NewDict = dict:store(Key, createFDs(IslandPath, dict:new(), Stats), Dict),
-    prepareDictionary(Rest, NewDict, Path, Stats).
+prepare_dictionary([Key|Rest], Dict, Path, Stats) ->
+    IslandPath = create_dir(Path, length(Rest) + 1),
+    NewDict = dict:store(Key, create_fds(IslandPath, dict:new(), Stats), Dict),
+    prepare_dictionary(Rest, NewDict, Path, Stats).
 
 
--spec createDir(standard_io | string(), pos_integer()) -> standard_io | string().
-createDir(standard_io, _IslandsNr) ->
+-spec create_dir(standard_io | string(), pos_integer()) -> standard_io | string().
+create_dir(standard_io, _IslandsNr) ->
     standard_io;
 
-createDir("standard_io", _IslandsNr) ->
+create_dir("standard_io", _IslandsNr) ->
     standard_io;
 
-createDir(Path, IslandsNr) ->
+create_dir(Path, IslandsNr) ->
     NewPath = filename:join([Path, "island" ++ integer_to_list(IslandsNr)]),
     file:make_dir(NewPath),
     NewPath.
 
 
 %% @doc Creates a dictionary with stat names as keys and corresponding file descriptors
--spec createFDs(standard_io | string(), dict:dict(), [atom()]) -> FDs :: dict:dict().
-createFDs(standard_io, InitDict, Files) ->
+-spec create_fds(standard_io | string(), dict:dict(), [atom()]) -> FDs :: dict:dict().
+create_fds(standard_io, InitDict, Files) ->
     lists:foldl(fun(Atom, Dict) ->
                         dict:store(Atom, standard_io, Dict)
                 end, InitDict, Files);
 
-createFDs(Path, InitDict, Files) ->
+create_fds(Path, InitDict, Files) ->
     lists:foldl(fun(Atom, Dict) ->
                         Filename = atom_to_list(Atom) ++ ".txt",
                         {ok, Descriptor} = file:open(filename:join([Path, Filename]), [append, delayed_write, raw]),
@@ -166,11 +166,11 @@ create_counter(Keys, Cf) ->
                 end, dict:new(), Keys).
 
 
--spec logIsland(pid() | pos_integer(), [tuple()], counter(), [funstat()]) -> counter().
-logIsland(_Key, [], Counter, _Funstats) ->
+-spec log_island(pid() | pos_integer(), [tuple()], counter(), [funstat()]) -> counter().
+log_island(_Key, [], Counter, _Funstats) ->
     Counter;
 
-logIsland(Key, [{Stat, FD}|FDs], Counter, Funstats) ->
+log_island(Key, [{Stat, FD}|FDs], Counter, Funstats) ->
     Value = dict:fetch(Stat, Counter),
     file:write(FD, io_lib:fwrite("~p ~p ~p\n", [Stat, Key, Value])),
     NewCounter = case lists:keyfind(Stat, 1, Funstats) of
@@ -179,11 +179,11 @@ logIsland(Key, [{Stat, FD}|FDs], Counter, Funstats) ->
                      _Tuple ->
                          Counter
                  end,
-    logIsland(Key, FDs, NewCounter, Funstats).
+    log_island(Key, FDs, NewCounter, Funstats).
 
 
--spec closeFiles(dict:dict()) -> any().
-closeFiles(Dict) ->
+-spec close_files(dict:dict()) -> any().
+close_files(Dict) ->
     [case X of
          {Id, FD} when is_atom(Id) -> file:close(FD);
          {_Id, D} -> [file:close(FD) || {_Stat, FD} <- dict:to_list(D)]
