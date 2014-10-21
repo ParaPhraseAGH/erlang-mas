@@ -22,7 +22,7 @@ To build the project on your machine you need:
 First you need to clone the repository:
 
     > git clone https://github.com/ParaPhraseAGH/erlang-mas.git
-    > cd erlang/
+    > cd erlang-mas/
     
 To build the project you should use the Makefile:
 
