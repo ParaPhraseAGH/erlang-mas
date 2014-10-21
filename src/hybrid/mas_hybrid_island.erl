@@ -14,7 +14,7 @@
 %% API functions
 %% ====================================================================
 %% @doc Generates initial data and starts the computation
--spec start(sim_params(), config()) -> ok.
+-spec start(sim_params(), config()) -> no_return().
 start(SP, Cf = #config{agent_env = Environment}) ->
     mas_misc_util:seed_random(),
     Agents = mas_misc_util:generate_population(SP, Cf),
@@ -36,7 +36,7 @@ sendAgent(Pid, Agent) ->
 %% Internal functions
 %% ====================================================================
 %% @doc The main island process loop. A new generation of the population is created in every iteration.
--spec loop([agent()], counter(), [tuple()], sim_params(), config()) -> ok.
+-spec loop([agent()], counter(), [tuple()], sim_params(), config()) -> [agent()].
 loop(Agents, InteractionCounter, Funstats, SP, Cf) ->
     receive
         write ->
