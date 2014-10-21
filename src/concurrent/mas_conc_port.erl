@@ -49,15 +49,15 @@ close(Pid) ->
                 arenas :: arenas(),
                 funstats :: [funstat()],
                 emigrants = [] :: [pid()],
-                immigrants = [] :: [{pid(),agent()}],
+                immigrants = [] :: [{pid(), agent()}],
                 lastLog :: erlang:timestamp(),
                 config :: config()}).
 
 -type state() :: #state{} | cleaning.
 
 
--spec init([pid()]) -> {ok,state()} |
-                       {ok,state(),non_neg_integer()}.
+-spec init([pid()]) -> {ok, state()} |
+                       {ok, state(), non_neg_integer()}.
 init([Supervisor, Cf = #config{write_interval = WriteInterval}]) ->
     mas_misc_util:seed_random(),
     timer:send_after(WriteInterval, timer),
@@ -69,12 +69,15 @@ init([Supervisor, Cf = #config{write_interval = WriteInterval}]) ->
                 config = Cf}}.
 
 
--spec handle_call(term(),{pid(),term()},state()) -> {reply,term(),state()} |
-                                                    {reply,term(),state(),hibernate | infinity | non_neg_integer()} |
-                                                    {noreply,state()} |
-                                                    {noreply,state(),hibernate | infinity | non_neg_integer()} |
-                                                    {stop,term(),term(),state()} |
-                                                    {stop,term(),state()}.
+-spec handle_call(term(), {pid(), term()}, state()) ->
+                         {reply, term(), state()} |
+                         {reply, term(),
+                          state(),hibernate | infinity | non_neg_integer()} |
+                         {noreply, state()} |
+                         {noreply, state(),
+                          hibernate | infinity | non_neg_integer()} |
+                         {stop, term(), term(), state()} |
+                         {stop, term(), state()}.
 handle_call({arenas, Arenas}, _From, St) ->
     mas_topology:helloPort(),
     {reply, ok, St#state{arenas = Arenas}};
@@ -87,12 +90,16 @@ handle_call({emigrate, Agent}, From, St) ->
     {HisPid, _} = From,
     {Emigrants, Immigrants, LastLog} = check(St),
     mas_topology:emigrant({Agent, From}),
-    {noreply, St#state{emigrants = [HisPid|Emigrants], immigrants = Immigrants, lastLog = LastLog}}.
+    {noreply, St#state{emigrants = [HisPid|Emigrants],
+                       immigrants = Immigrants,
+                       lastLog = LastLog}}.
 
 
--spec handle_cast(term(),state()) -> {noreply,state()} |
-                                     {noreply,state(),hibernate | infinity | non_neg_integer()} |
-                                     {stop,term(),state()}.
+-spec handle_cast(term(), state()) ->
+                         {noreply, state()} |
+                         {noreply, state(),
+                          hibernate | infinity | non_neg_integer()} |
+                         {stop,term(),state()}.
 
 handle_cast({immigrant, {_Agent, {Pid, _}}}, cleaning) ->
     exit(Pid, finished),
@@ -102,16 +109,20 @@ handle_cast({immigrant, {Agent, From}}, St) ->
     gen_server:reply(From, St#state.arenas),
     {Emigrants, Immigrants, LastLog} = check(St),
     {HisPid, _} = From,
-    {noreply, St#state{immigrants = [{HisPid,Agent}|Immigrants], emigrants = Emigrants, lastLog = LastLog}};
+    {noreply, St#state{immigrants = [{HisPid, Agent}|Immigrants],
+                       emigrants = Emigrants,
+                       lastLog = LastLog}};
 
 handle_cast(close, St) ->
     _ = check(St),
     {noreply, cleaning, ?TIMEOUT}.
 
 
--spec handle_info(term(),state()) -> {noreply,state()} |
-                                     {noreply,state(),hibernate | infinity | non_neg_integer()} |
-                                     {stop,term(),state()}.
+-spec handle_info(term(), state()) ->
+                         {noreply, state()} |
+                         {noreply, state(),
+                          hibernate | infinity | non_neg_integer()} |
+                         {stop, term(), state()}.
 handle_info(timeout, cleaning) ->
     {stop, normal, cleaning};
 
@@ -125,12 +136,12 @@ handle_info(timer, St) ->
                           lastLog = LastLog}}.
 
 
--spec terminate(term(),state()) -> no_return().
+-spec terminate(term(), state()) -> no_return().
 terminate(_Reason, _State) ->
     ok.
 
 
--spec code_change(term(),state(),term()) -> {ok, state()}.
+-spec code_change(term(), state(), term()) -> {ok, state()}.
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
 
@@ -138,7 +149,7 @@ code_change(_OldVsn, State, _Extra) ->
 %% Internal functions
 %% ====================================================================
 
--spec check(state()) -> {[pid()],[{pid(),agent()}],erlang:timestamp()}.
+-spec check(state()) -> {[pid()], [{pid(), agent()}], erlang:timestamp()}.
 check(#state{emigrants = Emigrants,
              immigrants = Immigrants,
              funstats = Funstats,
@@ -149,7 +160,8 @@ check(#state{emigrants = Emigrants,
     case mas_misc_util:log_now(LastLog, Cf) of
         {yes, NewLog} ->
             mas_logger:log_countstat(Supervisor, migration, length(Emigrants)),
-            [mas_logger:log_funstat(Supervisor, StatName, Val) || {StatName, _MapFun, _ReduceFun, Val} <- Funstats],
+            [mas_logger:log_funstat(Supervisor, StatName, Val)
+             || {StatName, _MapFun, _ReduceFun, Val} <- Funstats],
             timer:send_after(WriteInterval, timer),
             {[], [], NewLog};
         notyet ->

@@ -117,16 +117,18 @@ handle_call({interact, Agent}, From, St = #state{sim_params = SP, config = Cf}) 
 handle_call({arenas, Arenas}, _From, St = #state{config = Cf}) ->
     {reply, ok, St#state{arenas = Arenas}, Cf#config.arena_timeout}.
 
--spec handle_cast(Request :: term(), State :: #state{}) -> {noreply, NewState :: #state{}} |
-                                                           {noreply, NewState :: #state{}, timeout() | hibernate} |
-                                                           {stop, Reason :: term(), NewState :: #state{}}.
+-spec handle_cast(Request :: term(), State :: #state{})
+                 -> {noreply, NewState :: #state{}} |
+                    {noreply, cleaning, timeout() | hibernate} |
+                    {stop, Reason :: term(), NewState :: #state{}}.
 handle_cast(close, _State) ->
     {noreply, cleaning, ?CLOSING_TIMEOUT}.
 
 
--spec handle_info(Info :: timeout() | term(), State :: #state{}) -> {noreply, NewState :: #state{}} |
-                                                                    {noreply, NewState :: #state{}, timeout() | hibernate} |
-                                                                    {stop, Reason :: term(), NewState :: #state{}}.
+-spec handle_info(Info :: timeout() | term(), State :: #state{})
+                 -> {noreply, NewState :: #state{}} |
+                    {noreply, NewState :: #state{}, timeout() | hibernate} |
+                    {stop, Reason :: term(), NewState :: #state{}}.
 handle_info(timeout, cleaning) ->
     {stop, normal, cleaning};
 
