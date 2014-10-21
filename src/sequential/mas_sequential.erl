@@ -38,7 +38,7 @@ start(Time, SP, Cf = #config{islands = Islands, agent_env = Env}) ->
 %% ====================================================================
 
 %% @doc The main island process loop. A new generation of the population is created in every iteration.
--spec loop([island()], [counter()], [funstat()], sim_params(), config()) -> float().
+-spec loop([island()], [counter()], [funstat()], sim_params(), config()) -> [agent()].
 loop(Islands, Counters, Funstats, SP, Cf) ->
     receive
         write ->
@@ -78,7 +78,7 @@ seq_migrate({migration,Agents},From) ->
     mas_misc_util:group_by(Destinations).
 
 
--spec append({pos_integer(),[agent()]}, [list(agent())]) -> [list(agent())].
+-spec append([{pos_integer(),[agent()]}], [list(agent())]) -> [list(agent())].
 append([],Islands) ->
     Islands;
 
