@@ -25,7 +25,7 @@ end_per_testcase(_AnyTestCase, _Conf) ->
 
 should_be_called_in_each_worker(_Conf) ->
     %% GIVEN
-    meck:expect(misc_util, seed_random, 0, ok),
+    meck:expect(mas_misc_util, seed_random, 0, ok),
     NumberOfWorkers = 4,
 
     %% WHEN
@@ -38,14 +38,14 @@ should_be_called_in_each_worker(_Conf) ->
              _Data = [[a, b, c, d, e]]),
 
     %% THEN
-    meck:wait(NumberOfWorkers, misc_util, seed_random, '_', 2000),
+    meck:wait(NumberOfWorkers, mas_misc_util, seed_random, '_', 2000),
     ok.
 
 
 one_process_should_call_random_only_once(_Conf) ->
     %% GIVEN
     DataLen = 10,
-    meck:expect(misc_util, seed_random, 0, ok),
+    meck:expect(mas_misc_util, seed_random, 0, ok),
 
     meck:new(helpers, [non_strict]),
     meck:expect(helpers, id, fun(Any) ->
@@ -66,10 +66,10 @@ one_process_should_call_random_only_once(_Conf) ->
     %% process was callen DataLen times
     meck:wait(DataLen, helpers, id, 1, 2000 ),
     %% but seed_random was called only once
-    meck:wait(1, misc_util, seed_random, 0, 2000),
+    meck:wait(1, mas_misc_util, seed_random, 0, 2000),
     %% and __only__ once
     try
-        should_timeout = meck:wait(2, misc_util, seed_random, 0, 2000)
+        should_timeout = meck:wait(2, mas_misc_util, seed_random, 0, 2000)
     catch
         error:timeout ->
             ok
