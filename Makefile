@@ -26,8 +26,9 @@ compile:
 doc:
 	$(REBAR) skip_deps=true doc
 
-test: all
+test: clean all
 	./rebar ct
+	make dialyzer	
 
 $(DEPS_PLT):
 	@echo Building local plt at $(DEPS_PLT)
@@ -43,10 +44,7 @@ shell: deps compile
 	@$(ERL) $(ERLFLAGS)
 
 clean:
-	- rm -rf $(CURDIR)/test/*.beam
-	# - rm -rf $(CURDIR)/logs
-	# - rm -rf $(CURDIR)/ebin
-	$(REBAR) skip_deps=true clean
+	$(REBAR) clean
 
 distclean: clean
 	- rm -rf $(DEPS_PLT)
