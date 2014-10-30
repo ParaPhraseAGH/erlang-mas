@@ -55,21 +55,34 @@ main(Population, Time, SP, Cf) ->
 
     GroupFun = fun mas_misc_util:group_by/1,
 
+
     LogFun = fun(Groups) ->
                      log_countstats(Groups, Cf),
                      log_funstats(Groups, Cf),
                      Groups
              end,
 
+    Split = fun(Groups) ->
+                    lists:flatmap(
+                      fun (Group) ->
+                              split(Group, 20)
+                      end,
+                      Groups)
+            end,
 
-    TMGL = fun (Agents) ->
-                   Tagged = lists:map(TagFun,
-                                      Agents),
-                   Migrated = lists:map(MigrateFun,
-                                        Tagged),
-                   Grouped = GroupFun(Migrated),
-                   LogFun(Grouped)
-           end,
+
+
+
+
+    TMGLS = fun (Agents) ->
+                    Tagged = lists:map(TagFun,
+                                       Agents),
+                    Migrated = lists:map(MigrateFun,
+                                         Tagged),
+                    Grouped = GroupFun(Migrated),
+                    LogFun(Grouped),
+                    Split(Grouped)
+            end,
 
 
     Work = {seq, fun({{Home, Behaviour}, Agents}) ->
@@ -84,7 +97,7 @@ main(Population, Time, SP, Cf) ->
                             mas_misc_util:shuffle(lists:flatten(Agents))
                     end},
 
-    Workflow = {pipe, [{seq, TMGL},
+    Workflow = {pipe, [{seq, TMGLS},
                        {map, [Work], Workers, pull},
                        Shuffle]},
 
@@ -147,3 +160,32 @@ seed_random_once_per_process() ->
         true ->
             ok
     end.
+
+
+
+%% @doc Split given group of agents into list of max size `Size`, with
+%% keeping tags (island number in our case) exactly the same.x
+-spec split(Group, Size) -> Groups when
+      Groups :: [Group],
+      Group :: {Tag, [mas:agent()]},
+      Tag :: any(),
+      Size :: pos_integer().
+
+split(_Group = {Tag, Agents}, Size) ->
+    AgentsLists = partition(Agents, Size),
+    [{Tag, AL} || AL <- AgentsLists].
+
+
+
+-spec partition([A], Size) -> [[A]] when
+      A :: any(),
+      Size :: pos_integer().
+partition(List, Size) ->
+    partition(List, Size, []).
+
+partition(List, Size, Acc) when
+      length (List) =< Size ->
+    [List | Acc];
+partition(List, Size, Acc) ->
+    {Part, Rest} = lists:split(Size, List),
+    partition(Rest, Size, [Part | Acc]).
