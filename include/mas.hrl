@@ -15,6 +15,7 @@
                  write_interval :: pos_integer(),
                  skel_workers :: pos_integer(),
                  arena_timeout :: pos_integer(),
-                 split_size :: pos_integer()}).
+                 split_size :: pos_integer(),
+                 skel_pull :: atom()}).
 
 -type config() :: #config{}.

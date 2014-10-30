@@ -97,8 +97,15 @@ main(Population, Time, SP, Cf) ->
                             mas_misc_util:shuffle(lists:flatten(Agents))
                     end},
 
+    Map = case Cf#config.skel_pull of
+              enable ->
+                  {map, [Work], Workers, pull};
+              _ ->
+                  {map, [Work], Workers}
+          end,
+
     Workflow = {pipe, [{seq, TMGLS},
-                       {map, [Work], Workers, pull},
+                       Map,
                        Shuffle]},
 
     [FinalIslands] = skel:do([{feedback,
