@@ -135,6 +135,11 @@ create_dir("standard_io", _IslandsNr) ->
     standard_io;
 
 create_dir(Path, IslandsNr) ->
+    case file:make_dir(Path) of
+        ok -> ok;
+        {error, eexist} -> already_exists;
+        {error, Reason} -> erlang:error(Reason)
+    end,
     NewPath = filename:join([Path, "island" ++ integer_to_list(IslandsNr)]),
     file:make_dir(NewPath),
     NewPath.
