@@ -5,6 +5,7 @@
 -export([start/3,
          seed_random_once_per_process/0]).
 
+
 -include ("mas.hrl").
 
 -compile([{inline, [seed_random_once_per_process/0]}]).
@@ -84,7 +85,7 @@ main(Population, Time, SP, Cf) ->
                     end},
 
     Workflow = {pipe, [{seq, TMGL},
-                       {map, [Work], Workers},
+                       {map, [Work], Workers, pull},
                        Shuffle]},
 
     [FinalIslands] = skel:do([{feedback,
