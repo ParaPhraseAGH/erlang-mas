@@ -65,7 +65,7 @@ main(Population, Time, SP, Cf) ->
     Split = fun(Groups) ->
                     lists:flatmap(
                       fun (Group) ->
-                              split(Group, 20)
+                              split(Group, Cf#config.split_size)
                       end,
                       Groups)
             end,
