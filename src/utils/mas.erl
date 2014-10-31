@@ -44,5 +44,5 @@ proplist_to_record(Proplist) ->
             ?LOAD(write_interval, Dict),
             ?LOAD(skel_workers, Dict),
             ?LOAD(arena_timeout, Dict),
-            ?LOAD(split_size, Dict),
+            ?LOAD(skel_split_size, Dict),
             ?LOAD(skel_pull, Dict)}.
