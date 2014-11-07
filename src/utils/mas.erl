@@ -22,9 +22,12 @@
 -type agent_behaviour() :: agent_behaviour(any()).
 
 
+
 -spec start(pos_integer(), sim_params(), [tuple()]) -> [agent()].
 start(Time, SP, Options) ->
     ConfigRecord = mas_config:proplist_to_record(Options),
     io:format("### ConfigRecord: ~w~n", [ConfigRecord]),
+	application:ensure_all_started(exometer),
+    exometer_report:add_reporter(mas_reporter, [{config, ConfigRecord}]),
     Model = ConfigRecord#config.model,
     Model:start(Time, SP, ConfigRecord).

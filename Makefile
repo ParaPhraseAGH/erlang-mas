@@ -27,7 +27,7 @@ doc:
 	$(REBAR) skip_deps=true doc
 
 test: clean all
-	./rebar ct
+	$(REBAR) ct skip_deps=true
 	make dialyzer	
 
 $(DEPS_PLT):

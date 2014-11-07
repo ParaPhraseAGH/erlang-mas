@@ -13,7 +13,8 @@
     {applications, [
         kernel,
         stdlib,
-        skel
+        skel,
+        exometer
     ]},
     {env, []}
 ]}.
