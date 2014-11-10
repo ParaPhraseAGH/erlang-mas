@@ -23,11 +23,8 @@
 
 -spec start(atom(), model(), pos_integer(), sim_params(), [tuple()]) -> [agent()].
 start(Module, Model, Time, SP, Options) ->
-    ConfigFile = filename:join(mas_misc_util:get_config_dir(), "mas.config"),
-    {ok, ConfigFromFile} = file:consult(ConfigFile),
-    ConfigWithEnv = [{agent_env,Module}|ConfigFromFile],
-    OverwrittenConfig = mas_misc_util:overwrite_options(Options, ConfigWithEnv),
-    ConfigRecord = mas_config:proplist_to_record(OverwrittenConfig),
+    ConfigRecord = mas_config:proplist_to_record([{agent_env, Module} | Options]),
+    io:format(">>ConfigRecord: ~p~n", [ConfigRecord]),
     Model:start(Time, SP, ConfigRecord).
 
 
