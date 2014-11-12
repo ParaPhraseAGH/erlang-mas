@@ -2,7 +2,7 @@
 %% time and parameters
 
 -module (mas).
--export ([start/4]).
+-export ([start/3]).
 -export_type([agent/0,
               agent/1,
               sim_params/0,
@@ -22,11 +22,9 @@
 -type agent_behaviour() :: agent_behaviour(any()).
 
 
--spec start(atom(), pos_integer(), sim_params(), [tuple()]) -> [agent()].
-start(Module, Time, SP, Options) ->
-    ConfigRecord =
-        mas_config:proplist_to_record([{agent_env, Module} |
-                                       Options]),
+-spec start(pos_integer(), sim_params(), [tuple()]) -> [agent()].
+start(Time, SP, Options) ->
+    ConfigRecord = mas_config:proplist_to_record(Options),
     io:format("### ConfigRecord: ~p~n", [ConfigRecord]),
     Model = ConfigRecord#config.model,
     Model:start(Time, SP, ConfigRecord).
