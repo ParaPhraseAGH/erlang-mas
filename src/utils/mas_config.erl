@@ -21,7 +21,8 @@
 -spec proplist_to_record([tuple()]) -> config().
 proplist_to_record(Options) ->
     Proplist = Options ++ default_options(),
-    #config{?LOAD(Proplist, agent_env),
+    #config{?LOAD(Proplist, model),
+            ?LOAD(Proplist, agent_env),
             ?LOAD(Proplist, topology),
             ?LOAD(Proplist, migration_probability),
             ?LOAD(Proplist, log_dir),
@@ -36,8 +37,12 @@ proplist_to_record(Options) ->
 
 -spec options_specs() -> [getopt:option_spec()].
 options_specs() ->
-    [{agent_env,              $E,         "agent_env",              atom,
-     "Module implementing `mas_agent_env` behaviour"},
+    [{model,                  $M,         "model",                  atom,
+      {"Model on  which mas will be run. Possible options are:"
+       "`mas_skel`, `mas_sequential`,  `mas_concurrent` and  `mas_hybrid`"}},
+
+     {agent_env,              $E,         "agent_env",              atom,
+      "Module implementing `mas_agent_env` behaviour"},
 
      {topology,               $T,        "topology",                {atom, mesh},
       "Island topologies (ring, mes)h"},

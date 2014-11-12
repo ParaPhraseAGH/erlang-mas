@@ -1,7 +1,7 @@
 %% @doc This module starts the mas framework with given environment, model and parameters
 
 -module (mas).
--export ([start/5]).
+-export ([start/4]).
 -export_type([agent/0,
               agent/1,
               sim_params/0,
@@ -21,10 +21,11 @@
 -type agent_behaviour() :: agent_behaviour(any()).
 
 
--spec start(atom(), model(), pos_integer(), sim_params(), [tuple()]) -> [agent()].
-start(Module, Model, Time, SP, Options) ->
+-spec start(atom(), pos_integer(), sim_params(), [tuple()]) -> [agent()].
+start(Module, Time, SP, Options) ->
     ConfigRecord = mas_config:proplist_to_record([{agent_env, Module} | Options]),
     io:format("### ConfigRecord: ~p~n", [ConfigRecord]),
+    Model = ConfigRecord#config.model,
     Model:start(Time, SP, ConfigRecord).
 
 
