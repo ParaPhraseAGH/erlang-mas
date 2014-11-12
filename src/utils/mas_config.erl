@@ -38,19 +38,18 @@ proplist_to_record(Options) ->
 -spec options_specs() -> [getopt:option_spec()].
 options_specs() ->
     [{model,                  $M,         "model",                  atom,
-      {"Model on  which mas will be run. Possible options are:"
-       "`mas_skel`, `mas_sequential`,  `mas_concurrent` and  `mas_hybrid`"}},
+      "Model on  which mas will be run. Possible options are: `mas_skel`, `mas_sequential`,  `mas_concurrent` and  `mas_hybrid`"},
 
-     {agent_env,              $E,         "agent_env",              atom,
+     {agent_env,              undefined,  "agent_env",              atom,
       "Module implementing `mas_agent_env` behaviour"},
 
-     {topology,               $T,        "topology",                {atom, mesh},
-      "Island topologies (ring, mes)h"},
+     {topology,               $T,         "topology",                {atom, mesh},
+      "Island topologies (ring, mesh)"},
 
-     {migration_probability,  undefined, "migration_probability",   {float, 0.0001},
+     {migration_probability,  undefined,  "migration_probability",   {float, 0.0001},
       "The probability of migration of an agent with positive energy"},
 
-     {log_dir,                $L,         "log_dir",                {atom, standard_io},
+     {log_dir,                $L,          "log_dir",                {atom, standard_io},
      "The default path to write the logs to. The `standard_io` atom cause the logs to be sent to the standard output"},
 
      {islands,                $I,         "islands",                {integer, 4},
@@ -59,13 +58,13 @@ options_specs() ->
      {population_size,        $P,         "population_size",        {integer, 100},
       "The initial size of an island's population"},
 
-     {write_interval,         $W,         "write_interval",         {integer, 1000},
+     {write_interval,         undefined,  "write_interval",         {integer, 1000},
       "How often the logs are writen to output (in milliseconds)"},
 
      {arena_timeout,          undefined,  "arena_timeout",          {integer, 5000},
       "How long an arena should wait for agents to come before raising an error (in milliseconds or the atom infinity)"},
 
-     {skel_workers,           undefined,  "skel_workers",           {integer, 4},
+     {skel_workers,           $W,         "skel_workers",           {integer, 4},
       "Number of workers used in skel map skeleton."},
 
      {skel_split_size,        undefined,  "skel_split_size",        {integer, 20},
