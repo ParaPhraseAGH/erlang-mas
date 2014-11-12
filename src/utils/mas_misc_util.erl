@@ -5,7 +5,7 @@
 -module(mas_misc_util).
 -export([group_by/1, shuffle/1, clear_inbox/0, result/1, find/2, average_number/2, map_index/4, shortest_zip/2,
     count_funstats/2, seed_random/0, log_now/2, meeting_proxy/4, create_new_counter/1, add_interactions_to_counter/2,
-    add_miliseconds/2, generate_population/2, overwrite_options/2, determine_behaviours/1, behaviour_proxy/3, get_config_dir/0]).
+    add_miliseconds/2, generate_population/2, determine_behaviours/1, behaviour_proxy/3]).
 
 -include ("mas.hrl").
 
@@ -113,16 +113,6 @@ add_interactions_to_counter(Groups, Counter) ->
                 end,Counter, Groups).
 
 
-%% @doc Overwrites the parameters in a proplist
-%%      with the keyvals from another proplist
--spec overwrite_options([tuple()],[tuple()]) -> [tuple()].
-overwrite_options([], Overwritten) ->
-    Overwritten;
-
-overwrite_options([{Key, Val}|OtherOptions], ToBeOverwritten) ->
-    overwrite_options(OtherOptions, lists:keyreplace(Key, 1, ToBeOverwritten, {Key, Val})).
-
-
 -spec count_funstats([agent()], [funstat()]) -> [funstat()].
 count_funstats(_,[]) ->
     [];
@@ -182,10 +172,6 @@ seed_random() ->
     Hash = erlang:phash2(node()),
     random:seed(Hash,B,C).
 
--spec get_config_dir() -> file:filename_all().
-get_config_dir() ->
-    AppDir = filename:dirname(filename:dirname(code:which(?MODULE))),
-    filename:join(AppDir, "etc").
 
 %% ====================================================================
 %% Internal functions
