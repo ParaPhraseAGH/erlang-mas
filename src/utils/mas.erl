@@ -25,6 +25,6 @@
 -spec start(pos_integer(), sim_params(), [tuple()]) -> [agent()].
 start(Time, SP, Options) ->
     ConfigRecord = mas_config:proplist_to_record(Options),
-    io:format("### ConfigRecord: ~p~n", [ConfigRecord]),
+    io:format("### ConfigRecord: ~w~n", [ConfigRecord]),
     Model = ConfigRecord#config.model,
     Model:start(Time, SP, ConfigRecord).
