@@ -1,4 +1,5 @@
-%% @doc This module starts the mas framework with given environment, model and parameters
+%% @doc This module starts the mas framework with given environment,
+%% time and parameters
 
 -module (mas).
 -export ([start/4]).
@@ -23,11 +24,9 @@
 
 -spec start(atom(), pos_integer(), sim_params(), [tuple()]) -> [agent()].
 start(Module, Time, SP, Options) ->
-    ConfigRecord = mas_config:proplist_to_record([{agent_env, Module} | Options]),
+    ConfigRecord =
+        mas_config:proplist_to_record([{agent_env, Module} |
+                                       Options]),
     io:format("### ConfigRecord: ~p~n", [ConfigRecord]),
     Model = ConfigRecord#config.model,
     Model:start(Time, SP, ConfigRecord).
-
-
-
-

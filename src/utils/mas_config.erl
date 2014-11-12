@@ -77,6 +77,6 @@ options_specs() ->
 
 
 default_options() ->
-    {ok, {Options, [] = _Other}} =
+    {ok, {Options, _}} =
         getopt:parse(options_specs(), ""),
     Options.
