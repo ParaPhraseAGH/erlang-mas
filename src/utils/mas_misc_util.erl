@@ -3,9 +3,24 @@
 %% @doc This module contains common helpers for different models of computation
 
 -module(mas_misc_util).
--export([group_by/1, shuffle/1, clear_inbox/0, result/1, find/2, average_number/2, map_index/4, shortest_zip/2,
-    count_funstats/2, seed_random/0, log_now/2, meeting_proxy/4, create_new_counter/1, add_interactions_to_counter/2,
-    add_miliseconds/2, generate_population/2, overwrite_options/2, determine_behaviours/1, behaviour_proxy/3, get_config_dir/0]).
+-export([group_by/1,
+         shuffle/1,
+         clear_inbox/0,
+         result/1,
+         find/2,
+         average_number/2,
+         map_index/4,
+         shortest_zip/2,
+         count_funstats/2,
+         seed_random/0,
+         log_now/2,
+         meeting_proxy/4,
+         create_new_counter/1,
+         add_interactions_to_counter/2,
+         add_miliseconds/2,
+         generate_population/2,
+         determine_behaviours/1,
+         behaviour_proxy/3]).
 
 -include ("mas.hrl").
 
@@ -94,7 +109,7 @@ log_now(LastLog, #config{write_interval = WriteInterval}) ->
     if
         Diff >= IntervalInMicros ->
             {Mega, Sec, Micro} = LastLog,
-            {yes,{Mega, Sec + 1, Micro}};
+            {yes, {Mega, Sec + 1, Micro}};
         true ->
             notyet
     end.
@@ -110,21 +125,11 @@ create_new_counter(Config) ->
 add_interactions_to_counter(Groups, Counter) ->
     lists:foldl(fun({Activity, Value}, TmpCounter) ->
                         dict:update_counter(Activity, length(Value), TmpCounter)
-                end,Counter, Groups).
-
-
-%% @doc Overwrites the parameters in a proplist
-%%      with the keyvals from another proplist
--spec overwrite_options([tuple()],[tuple()]) -> [tuple()].
-overwrite_options([], Overwritten) ->
-    Overwritten;
-
-overwrite_options([{Key, Val}|OtherOptions], ToBeOverwritten) ->
-    overwrite_options(OtherOptions, lists:keyreplace(Key, 1, ToBeOverwritten, {Key, Val})).
+                end, Counter, Groups).
 
 
 -spec count_funstats([agent()], [funstat()]) -> [funstat()].
-count_funstats(_,[]) ->
+count_funstats(_, []) ->
     [];
 
 count_funstats(Agents, [{Stat, MapFun, ReduceFun, OldAcc}|T]) ->
@@ -178,14 +183,10 @@ result(Agents) ->
 
 -spec seed_random() -> {integer(),integer(),integer()}.
 seed_random() ->
-    {_,B,C} = erlang:now(),
+    {_, B, C} = erlang:now(),
     Hash = erlang:phash2(node()),
-    random:seed(Hash,B,C).
+    random:seed(Hash, B, C).
 
--spec get_config_dir() -> file:filename_all().
-get_config_dir() ->
-    AppDir = filename:dirname(filename:dirname(code:which(?MODULE))),
-    filename:join(AppDir, "etc").
 
 %% ====================================================================
 %% Internal functions

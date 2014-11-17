@@ -1,7 +1,8 @@
-%% @doc This module starts the mas framework with given environment, model and parameters
+%% @doc This module starts the mas framework with given environment,
+%% time and parameters
 
 -module (mas).
--export ([start/5]).
+-export ([start/3]).
 -export_type([agent/0,
               agent/1,
               sim_params/0,
@@ -20,29 +21,10 @@
 -type agent_behaviour(Any) :: Any.
 -type agent_behaviour() :: agent_behaviour(any()).
 
--define(LOAD(Prop, Dict), Prop = dict:fetch(Prop,Dict)).
 
--spec start(atom(), model(), pos_integer(), sim_params(), [tuple()]) -> [agent()].
-start(Module, Model, Time, SP, Options) ->
-    ConfigFile = filename:join(mas_misc_util:get_config_dir(), "mas.config"),
-    {ok, ConfigFromFile} = file:consult(ConfigFile),
-    ConfigWithEnv = [{agent_env,Module}|ConfigFromFile],
-    OverwrittenConfig = mas_misc_util:overwrite_options(Options, ConfigWithEnv),
-    ConfigRecord = proplist_to_record(OverwrittenConfig),
+-spec start(pos_integer(), sim_params(), [tuple()]) -> [agent()].
+start(Time, SP, Options) ->
+    ConfigRecord = mas_config:proplist_to_record(Options),
+    io:format("### ConfigRecord: ~w~n", [ConfigRecord]),
+    Model = ConfigRecord#config.model,
     Model:start(Time, SP, ConfigRecord).
-
-%% @doc Transform a proplist with config properties to a record
--spec proplist_to_record([tuple()]) -> config().
-proplist_to_record(Proplist) ->
-    Dict = dict:from_list(Proplist),
-    #config{?LOAD(agent_env, Dict),
-            ?LOAD(topology, Dict),
-            ?LOAD(migration_probability, Dict),
-            ?LOAD(log_dir, Dict),
-            ?LOAD(islands, Dict),
-            ?LOAD(population_size, Dict),
-            ?LOAD(write_interval, Dict),
-            ?LOAD(skel_workers, Dict),
-            ?LOAD(arena_timeout, Dict),
-            ?LOAD(skel_split_size, Dict),
-            ?LOAD(skel_pull, Dict)}.

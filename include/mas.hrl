@@ -6,7 +6,8 @@
 
 -type funstat() :: {Name::atom(), Map::fun(), Reduce::fun(), Value::term()}.
 
--record(config, {agent_env :: atom(),
+-record(config, {model :: model(),
+                 agent_env :: atom(),
                  topology :: atom(),
                  log_dir :: atom() | string(),
                  islands :: pos_integer(),
