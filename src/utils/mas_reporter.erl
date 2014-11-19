@@ -87,7 +87,7 @@ exometer_cast(_, State) ->
 exometer_terminate(_, #state{fds = Dict}) ->
     [close_file(FD) || {_Metric, FD} <- dict:to_list(Dict)].
 
--spec exometer_setopts(exometer_report:metric(),
+-spec exometer_setopts(exometer:entry(),
                        exometer_report:options(),
                        exometer:status(),
                        exometer_report:mod_state()) ->

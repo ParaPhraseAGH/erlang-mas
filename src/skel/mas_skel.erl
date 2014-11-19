@@ -70,10 +70,6 @@ main(Population, Time, SP, Cf) ->
                       Groups)
             end,
 
-
-
-
-
     TMGLS = fun (Agents) ->
                     Tagged = lists:map(TagFun,
                                        Agents),
@@ -140,24 +136,6 @@ log_countstats(Groups, Cf) ->
 
     ok.
 
--spec log_funstats([tuple()], config()) -> ok.
-log_funstats(Groups, Cf) ->
-    Env = Cf#config.agent_env,
-    FunstatDict = dict:from_list([{I, Env:stats()}
-                                  || I <- lists:seq(1, Cf#config.islands)]),
-
-    NewDict = lists:foldl(fun({{Home, _Beh}, Agents}, Dict) ->
-                                  Funstats = dict:fetch(Home, Dict),
-                                  NewFunstats = mas_misc_util:count_funstats(Agents, Funstats),
-                                  dict:store(Home, NewFunstats, Dict)
-                          end, FunstatDict, Groups),
-
-    [[mas_logger:log_funstat(Home, Stat, Val)
-      || {Stat, _Map, _Reduce, Val} <- Stats]
-     || {Home, Stats} <- dict:to_list(NewDict)],
-
-    ok.
-
 
 -spec seed_random_once_per_process() -> ok.
 seed_random_once_per_process() ->
@@ -168,7 +146,6 @@ seed_random_once_per_process() ->
         true ->
             ok
     end.
-
 
 
 %% @doc Split given group of agents into list of max size `Size`, with
@@ -182,7 +159,6 @@ seed_random_once_per_process() ->
 split(_Group = {Tag, Agents}, Size) ->
     AgentsLists = partition(Agents, Size),
     [{Tag, AL} || AL <- AgentsLists].
-
 
 
 -spec partition([A], Size) -> [[A]] when
