@@ -20,14 +20,17 @@ start(Time, SP, Cf = #config{islands = Islands, agent_env = Env}) ->
     mas_misc_util:clear_inbox(),
     mas_misc_util:initialize_subscriptions(Cf),
     mas_topology:start_link(self(), Islands, Cf#config.topology),
-    InitIslands = [mas_misc_util:generate_population(SP, Cf) || _ <- lists:seq(1, Islands)],
+    InitIslands = [mas_misc_util:generate_population(SP, Cf)
+                   || _ <- lists:seq(1, Islands)],
     timer:send_after(Time, the_end),
     {ok, TRef} = timer:send_interval(Cf#config.write_interval, write),
-    {_Time, Result} = timer:tc(fun loop/5, [InitIslands,
-                                            [mas_misc_util:create_new_counter(Cf) || _ <- lists:seq(1, Islands)],
-                                            [Env:stats() || _ <- lists:seq(1, Islands)],
-                                            SP,
-                                            Cf]),
+    {_Time, Result} = timer:tc(fun loop/5,
+                               [InitIslands,
+                                [mas_misc_util:create_new_counter(Cf)
+                                 || _ <- lists:seq(1, Islands)],
+                                [Env:stats() || _ <- lists:seq(1, Islands)],
+                                SP,
+                                Cf]),
     timer:cancel(TRef),
     mas_topology:close(),
     Result.
@@ -41,35 +44,64 @@ start(Time, SP, Cf = #config{islands = Islands, agent_env = Env}) ->
 loop(Islands, Counters, Funstats, SP, Cf) ->
     receive
         write ->
-            [log_island(Nr, C, F) || {Nr, C, F} <- lists:zip3(lists:seq(1, length(Islands)), Counters, Funstats)],
+            [log_island(Nr, C, F)
+             || {Nr, C, F} <- lists:zip3(lists:seq(1, length(Islands)),
+                                         Counters,
+                                         Funstats)],
+
             loop(Islands,
-                 [mas_misc_util:create_new_counter(Cf) || _ <- lists:seq(1, length(Islands))],
+                 [mas_misc_util:create_new_counter(Cf)
+                  || _ <- lists:seq(1, length(Islands))],
                  Funstats,
                  SP,
                  Cf);
         the_end ->
             lists:flatten(Islands)
     after 0 ->
-            Groups = [mas_misc_util:group_by([{mas_misc_util:behaviour_proxy(Agent, SP, Cf), Agent} || Agent <- I]) || I <- Islands],
-            Emigrants = [seq_migrate(lists:keyfind(migration, 1, Island), Nr) || {Island, Nr} <- lists:zip(Groups, lists:seq(1, length(Groups)))],
-            NewGroups = [[mas_misc_util:meeting_proxy(Activity, mas_sequential, SP, Cf) || Activity <- I] || I <- Groups],
-            WithEmigrants = append(lists:flatten(Emigrants), NewGroups),
-            NewIslands = [mas_misc_util:shuffle(lists:flatten(I)) || I <- WithEmigrants],
+            Tag = fun(Island) ->
+                          [{mas_misc_util:behaviour_proxy(Agent,
+                                                          SP,
+                                                          Cf), Agent}
+                           || Agent <- Island]
+                  end,
 
-            NewCounters = [mas_misc_util:add_interactions_to_counter(G, C) || {G, C} <- lists:zip(Groups, Counters)],
-            NewFunstats = [mas_misc_util:count_funstats(I, F) || {I, F} <- lists:zip(NewIslands, Funstats)],
+            Groups = [mas_misc_util:group_by(Tag(I))
+                      || I <- Islands],
+
+            Emigrants = [seq_migrate(lists:keyfind(migration, 1, Island), Nr)
+                         || {Island, Nr} <- lists:zip(Groups,
+                                                      lists:seq(1, length(Groups)))],
+
+            NewGroups = [[mas_misc_util:meeting_proxy(Activity,
+                                                      mas_sequential,
+                                                      SP,
+                                                      Cf)
+                          || Activity <- I]
+                         || I <- Groups],
+            WithEmigrants = append(lists:flatten(Emigrants), NewGroups),
+
+            NewIslands = [mas_misc_util:shuffle(lists:flatten(I))
+                          || I <- WithEmigrants],
+
+            NewCounters = [mas_misc_util:add_interactions_to_counter(G, C)
+                           || {G, C} <- lists:zip(Groups, Counters)],
+
+            NewFunstats = [mas_misc_util:count_funstats(I, F)
+                           || {I, F} <- lists:zip(NewIslands, Funstats)],
 
             loop(NewIslands, NewCounters, NewFunstats, SP, Cf)
     end.
 
 -spec log_island(pos_integer(), counter(), [funstat()]) -> [ok].
 log_island(Key, Counter, _Funstats) ->
-    [exometer:update([Key, Interaction], Val) || {Interaction, Val} <- dict:to_list(Counter)].
+    [exometer:update([Key, Interaction], Val)
+     || {Interaction, Val} <- dict:to_list(Counter)].
 %%     [mas_logger:log_countstat(Key, Interaction, Val) || {Interaction, Val} <- dict:to_list(Counter)],
 %%     [mas_logger:log_funstat(Key, StatName, Val) || {StatName, _MapFun, _ReduceFun, Val} <- Funstats].
 
 
--spec seq_migrate(false | {migration,[agent()]}, pos_integer()) -> [{migration,[agent()]}].
+-spec seq_migrate(false | {migration,[agent()]}, pos_integer()) ->
+                         [{migration,[agent()]}].
 seq_migrate(false,_) ->
     [];
 

@@ -113,7 +113,8 @@ initialize_subscriptions(Cf = #config{islands = Islands,
      end || S <- Stats, I <- lists:seq(1, Islands)].
 
 
--spec log_now(erlang:timestamp(), config()) -> {yes,erlang:timestamp()} | notyet.
+-spec log_now(erlang:timestamp(), config()) ->
+                     {yes,erlang:timestamp()} | notyet.
 log_now(LastLog, #config{write_interval = WriteInterval}) ->
     Now = os:timestamp(),
     Diff = timer:now_diff(Now, LastLog),
