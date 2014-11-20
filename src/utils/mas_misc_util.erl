@@ -20,7 +20,8 @@
          add_miliseconds/2,
          generate_population/2,
          determine_behaviours/1,
-         behaviour_proxy/3]).
+         behaviour_proxy/3,
+         initialize_subscriptions/1]).
 
 -include ("mas.hrl").
 
@@ -99,6 +100,17 @@ average_number(Probability, List) ->
             end;
        N >=1 -> trunc(N)
     end.
+
+
+-spec initialize_subscriptions(config()) -> [ok].
+initialize_subscriptions(Cf = #config{islands = Islands,
+                                      write_interval = Int}) ->
+    Stats = determine_behaviours(Cf),
+    [begin
+         Metric = [I, S],
+         exometer:new(Metric, counter),
+         exometer_report:subscribe(mas_reporter, Metric, value, Int)
+     end || S <- Stats, I <- lists:seq(1, Islands)].
 
 
 -spec log_now(erlang:timestamp(), config()) -> {yes,erlang:timestamp()} | notyet.

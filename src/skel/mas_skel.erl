@@ -19,8 +19,7 @@
 -spec start(Time::pos_integer(), sim_params(), config()) -> ok.
 start(Time, SP, Cf = #config{islands = Islands, agent_env = Env}) ->
     mas_topology:start_link(self(), Islands, Cf#config.topology),
-    %%     mas_logger:start_link(lists:seq(1, Cf#config.islands), Cf),
-    initialize_subscriptions(Cf),
+    mas_misc_util:initialize_subscriptions(Cf),
     mas_misc_util:seed_random(),
     mas_misc_util:clear_inbox(),
     Population = [{I, Env:initial_agent(SP)} ||
@@ -28,7 +27,6 @@ start(Time, SP, Cf = #config{islands = Islands, agent_env = Env}) ->
                      I <- lists:seq(1, Islands)],
     {_Time, Result} = timer:tc(fun main/4, [Population, Time, SP, Cf]),
     mas_topology:close(),
-    %%     mas_logger:close(),
     Result.
 
 %% ====================================================================
@@ -173,14 +171,3 @@ partition(List, Size, Acc) when
 partition(List, Size, Acc) ->
     {Part, Rest} = lists:split(Size, List),
     partition(Rest, Size, [Part | Acc]).
-
-
--spec initialize_subscriptions(config()) -> [ok].
-initialize_subscriptions(Cf = #config{islands = Islands,
-                                      write_interval = Int}) ->
-    Stats = mas_misc_util:determine_behaviours(Cf),
-    [begin
-         Metric = [I,S],
-         exometer:new(Metric, counter),
-         exometer_report:subscribe(mas_reporter, Metric, value, Int)
-     end || S <- Stats, I <- lists:seq(1, Islands)].

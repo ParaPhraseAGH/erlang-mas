@@ -18,9 +18,9 @@
 start(Time, SP, Cf = #config{islands = Islands, agent_env = Env}) ->
     mas_misc_util:seed_random(),
     mas_misc_util:clear_inbox(),
+    mas_misc_util:initialize_subscriptions(Cf),
     mas_topology:start_link(self(), Islands, Cf#config.topology),
     InitIslands = [mas_misc_util:generate_population(SP, Cf) || _ <- lists:seq(1, Islands)],
-    mas_logger:start_link(lists:seq(1, Islands), Cf),
     timer:send_after(Time, the_end),
     {ok, TRef} = timer:send_interval(Cf#config.write_interval, write),
     {_Time, Result} = timer:tc(fun loop/5, [InitIslands,
@@ -30,7 +30,6 @@ start(Time, SP, Cf = #config{islands = Islands, agent_env = Env}) ->
                                             Cf]),
     timer:cancel(TRef),
     mas_topology:close(),
-    mas_logger:close(),
     Result.
 
 %% ====================================================================
@@ -64,9 +63,10 @@ loop(Islands, Counters, Funstats, SP, Cf) ->
     end.
 
 -spec log_island(pos_integer(), counter(), [funstat()]) -> [ok].
-log_island(Key, Counter, Funstats) ->
-    [mas_logger:log_countstat(Key, Interaction, Val) || {Interaction, Val} <- dict:to_list(Counter)],
-    [mas_logger:log_funstat(Key, StatName, Val) || {StatName, _MapFun, _ReduceFun, Val} <- Funstats].
+log_island(Key, Counter, _Funstats) ->
+    [exometer:update([Key, Interaction], Val) || {Interaction, Val} <- dict:to_list(Counter)].
+%%     [mas_logger:log_countstat(Key, Interaction, Val) || {Interaction, Val} <- dict:to_list(Counter)],
+%%     [mas_logger:log_funstat(Key, StatName, Val) || {StatName, _MapFun, _ReduceFun, Val} <- Funstats].
 
 
 -spec seq_migrate(false | {migration,[agent()]}, pos_integer()) -> [{migration,[agent()]}].
