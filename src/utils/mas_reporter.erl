@@ -17,11 +17,19 @@
 -export([exometer_init/1, exometer_report/5, exometer_subscribe/5,
          exometer_unsubscribe/4, exometer_info/2, exometer_call/3,
          exometer_cast/2, exometer_terminate/2, exometer_setopts/4,
-         exometer_newentry/2]).
+         exometer_newentry/2, add_reporter/1]).
 
 -record(state, {fds :: dict:dict(),
                 config :: config()}).
 -type state() :: #state{}.
+
+%%%===================================================================
+%%% API
+%%%===================================================================
+
+-spec add_reporter(config()) -> ok.
+add_reporter(Config) ->
+    ok = exometer_report:add_reporter(mas_reporter, [{config, Config}]).
 
 %%%===================================================================
 %%% Callbacks
