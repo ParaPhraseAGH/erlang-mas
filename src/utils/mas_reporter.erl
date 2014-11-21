@@ -114,13 +114,18 @@ create_fd(["standard_io" | _]) ->
 create_fd([Path | []]) ->
     file:open(Path ++ ".txt", [append, delayed_write, raw]);
 
-create_fd([Folder | Path]) ->
+create_fd([Folder, Next | Rest]) when is_integer(Folder) ->
+    create_fd([integer_to_binary(Folder), Next | Rest]);
+
+create_fd([Folder, Next | Rest]) when is_integer(Next) ->
+    create_fd([Folder, integer_to_binary(Next) | Rest]);
+
+create_fd([Folder, Next | Rest]) ->
     case file:make_dir(Folder) of
         ok -> ok;
         {error, eexist} -> already_exists;
         {error, Reason} -> erlang:error(Reason)
     end,
-    [Next | Rest] = Path,
     create_fd([filename:join([Folder, Next]) | Rest]).
 
 
