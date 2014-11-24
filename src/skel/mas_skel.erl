@@ -56,7 +56,6 @@ main(Population, Time, SP, Cf) ->
 
     LogFun = fun(Groups) ->
                      log_countstats(Groups, Cf),
-                     %%                      log_funstats(Groups, Cf),
                      Groups
              end,
 
@@ -130,7 +129,6 @@ log_countstats(Groups, Cf) ->
                                      dict:store(Home, NewIslandDict, AccBD)
                              end, BigDict, Groups),
 
-    %%     [[mas_logger:log_countstat(Island, Stat, Val)
     [[exometer:update([Island, Stat], Val)
       || {Stat, Val} <- dict:to_list(Counter)]
      || {Island, Counter} <- dict:to_list(NewBigDict)],
@@ -171,6 +169,7 @@ partition(List, Size) ->
 partition(List, Size, Acc) when
       length (List) =< Size ->
     [List | Acc];
+
 partition(List, Size, Acc) ->
     {Part, Rest} = lists:split(Size, List),
     partition(Rest, Size, [Part | Acc]).

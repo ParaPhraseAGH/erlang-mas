@@ -15,7 +15,7 @@
 %% ====================================================================
 
 -spec start(Time::pos_integer(), sim_params(), config()) -> [agent()].
-start(Time, SP, Cf = #config{islands = Islands, agent_env = Env}) ->
+start(Time, SP, Cf = #config{islands = Islands}) ->
     mas_misc_util:seed_random(),
     mas_misc_util:clear_inbox(),
     mas_misc_util:initialize_subscriptions(lists:seq(1, Islands), Cf),
@@ -24,11 +24,10 @@ start(Time, SP, Cf = #config{islands = Islands, agent_env = Env}) ->
                    || _ <- lists:seq(1, Islands)],
     timer:send_after(Time, the_end),
     {ok, TRef} = timer:send_interval(Cf#config.write_interval, write),
-    {_Time, Result} = timer:tc(fun loop/5,
+    {_Time, Result} = timer:tc(fun loop/4,
                                [InitIslands,
                                 [mas_misc_util:create_new_counter(Cf)
                                  || _ <- lists:seq(1, Islands)],
-                                [Env:stats() || _ <- lists:seq(1, Islands)],
                                 SP,
                                 Cf]),
     timer:cancel(TRef),
@@ -40,19 +39,17 @@ start(Time, SP, Cf = #config{islands = Islands, agent_env = Env}) ->
 %% ====================================================================
 
 %% @doc The main island process loop. A new generation of the population is created in every iteration.
--spec loop([island()], [counter()], [funstat()], sim_params(), config()) -> [agent()].
-loop(Islands, Counters, Funstats, SP, Cf) ->
+-spec loop([island()], [counter()], sim_params(), config()) -> [agent()].
+loop(Islands, Counters, SP, Cf) ->
     receive
         write ->
-            [log_island(Nr, C, F)
-             || {Nr, C, F} <- lists:zip3(lists:seq(1, length(Islands)),
-                                         Counters,
-                                         Funstats)],
+            [log_island(Nr, C)
+             || {Nr, C} <- lists:zip(lists:seq(1, length(Islands)),
+                                     Counters)],
 
             loop(Islands,
                  [mas_misc_util:create_new_counter(Cf)
                   || _ <- lists:seq(1, length(Islands))],
-                 Funstats,
                  SP,
                  Cf);
         the_end ->
@@ -78,6 +75,7 @@ loop(Islands, Counters, Funstats, SP, Cf) ->
                                                       Cf)
                           || Activity <- I]
                          || I <- Groups],
+
             WithEmigrants = append(lists:flatten(Emigrants), NewGroups),
 
             NewIslands = [mas_misc_util:shuffle(lists:flatten(I))
@@ -86,14 +84,11 @@ loop(Islands, Counters, Funstats, SP, Cf) ->
             NewCounters = [mas_misc_util:add_interactions_to_counter(G, C)
                            || {G, C} <- lists:zip(Groups, Counters)],
 
-            NewFunstats = [mas_misc_util:count_funstats(I, F)
-                           || {I, F} <- lists:zip(NewIslands, Funstats)],
-
-            loop(NewIslands, NewCounters, NewFunstats, SP, Cf)
+            loop(NewIslands, NewCounters, SP, Cf)
     end.
 
--spec log_island(pos_integer(), counter(), [funstat()]) -> [ok].
-log_island(Key, Counter, _Funstats) ->
+-spec log_island(pos_integer(), counter()) -> [ok].
+log_island(Key, Counter) ->
     [exometer:update([Key, Interaction], Val)
      || {Interaction, Val} <- dict:to_list(Counter)].
 

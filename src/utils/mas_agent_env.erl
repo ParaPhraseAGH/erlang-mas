@@ -15,5 +15,3 @@
 -callback behaviours() -> [agent_behaviour()].
 
 -callback meeting_function({agent_behaviour(), [agent()]}, sim_params()) -> [agent()].
-
--callback stats() -> [funstat()].

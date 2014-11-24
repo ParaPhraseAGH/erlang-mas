@@ -47,7 +47,6 @@ close(Pid) ->
 %% ====================================================================
 -record(state, {mySupervisor :: pid(),
                 arenas :: arenas(),
-                funstats :: [funstat()],
                 emigrants = [] :: [pid()],
                 immigrants = [] :: [{pid(), agent()}],
                 lastLog :: erlang:timestamp(),
@@ -61,11 +60,8 @@ close(Pid) ->
 init([Supervisor, Cf = #config{write_interval = WriteInterval}]) ->
     mas_misc_util:seed_random(),
     timer:send_after(WriteInterval, timer),
-    Env = Cf#config.agent_env,
-    Funstats = Env:stats(),
     {ok, #state{mySupervisor = Supervisor,
                 lastLog = os:timestamp(),
-                funstats = Funstats,
                 config = Cf}}.
 
 
@@ -152,7 +148,6 @@ code_change(_OldVsn, State, _Extra) ->
 -spec check(state()) -> {[pid()], [{pid(), agent()}], erlang:timestamp()}.
 check(#state{emigrants = Emigrants,
              immigrants = Immigrants,
-             funstats = Funstats,
              lastLog = LastLog,
              mySupervisor = Supervisor,
              config = Cf}) ->
@@ -160,9 +155,6 @@ check(#state{emigrants = Emigrants,
     case mas_misc_util:log_now(LastLog, Cf) of
         {yes, NewLog} ->
             exometer:update([Supervisor,migration], length(Emigrants)),
-%%             mas_logger:log_countstat(Supervisor, migration, length(Emigrants)),
-%%             [mas_logger:log_funstat(Supervisor, StatName, Val)
-%%              || {StatName, _MapFun, _ReduceFun, Val} <- Funstats],
             timer:send_after(WriteInterval, timer),
             {[], [], NewLog};
         notyet ->

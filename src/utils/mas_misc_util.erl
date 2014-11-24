@@ -11,7 +11,6 @@
          average_number/2,
          map_index/4,
          shortest_zip/2,
-         count_funstats/2,
          seed_random/0,
          log_now/2,
          meeting_proxy/4,
@@ -138,17 +137,6 @@ add_interactions_to_counter(Groups, Counter) ->
     lists:foldl(fun({Activity, Value}, TmpCounter) ->
                         dict:update_counter(Activity, length(Value), TmpCounter)
                 end, Counter, Groups).
-
-
--spec count_funstats([agent()], [funstat()]) -> [funstat()].
-count_funstats(_, []) ->
-    [];
-
-count_funstats(Agents, [{Stat, MapFun, ReduceFun, OldAcc}|T]) ->
-    NewAcc = lists:foldl(ReduceFun,
-                         OldAcc,
-                         [MapFun(Agent) || Agent <- Agents]),
-    [{Stat, MapFun, ReduceFun, NewAcc} | count_funstats(Agents,T)].
 
 
 -spec add_miliseconds({integer(),integer(),integer()},integer()) -> {integer(),integer(),integer()}.
