@@ -96,13 +96,11 @@ loop(Islands, Counters, Funstats, SP, Cf) ->
 log_island(Key, Counter, _Funstats) ->
     [exometer:update([Key, Interaction], Val)
      || {Interaction, Val} <- dict:to_list(Counter)].
-%%     [mas_logger:log_countstat(Key, Interaction, Val) || {Interaction, Val} <- dict:to_list(Counter)],
-%%     [mas_logger:log_funstat(Key, StatName, Val) || {StatName, _MapFun, _ReduceFun, Val} <- Funstats].
 
 
 -spec seq_migrate(false | {migration,[agent()]}, pos_integer()) ->
                          [{migration,[agent()]}].
-seq_migrate(false,_) ->
+seq_migrate(false, _) ->
     [];
 
 seq_migrate({migration,Agents},From) ->

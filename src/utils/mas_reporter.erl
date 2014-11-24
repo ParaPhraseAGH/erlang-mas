@@ -120,7 +120,8 @@ create_fd(["standard_io" | _]) ->
     standard_io;
 
 create_fd([Path | []]) ->
-    file:open(Path ++ ".txt", [append, delayed_write, raw]);
+    {ok, FD} = file:open(Path ++ ".txt", [append, delayed_write, raw]),
+    FD;
 
 create_fd([Folder, Next | Rest]) when is_integer(Folder) ->
     create_fd([integer_to_list(Folder), Next | Rest]);
