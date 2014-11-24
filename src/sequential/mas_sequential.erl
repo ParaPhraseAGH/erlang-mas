@@ -98,20 +98,24 @@ log_island(Key, Counter, _Funstats) ->
      || {Interaction, Val} <- dict:to_list(Counter)].
 
 
--spec seq_migrate(false | {migration,[agent()]}, pos_integer()) ->
-                         [{migration,[agent()]}].
+-spec seq_migrate(false | {migration, [agent()]}, pos_integer()) ->
+                         [{migration, [agent()]}].
 seq_migrate(false, _) ->
     [];
 
-seq_migrate({migration,Agents},From) ->
-    Destinations = [{mas_topology:getDestination(From),Agent} || Agent <- Agents],
+seq_migrate({migration, Agents}, From) ->
+    Destinations = [{mas_topology:getDestination(From), Agent}
+                    || Agent <- Agents],
     mas_misc_util:group_by(Destinations).
 
 
--spec append([{pos_integer(),[agent()]}], [list(agent())]) -> [list(agent())].
-append([],Islands) ->
+-spec append([{pos_integer(), [agent()]}], [list(agent())]) -> [list(agent())].
+append([], Islands) ->
     Islands;
 
-append([{Destination,Immigrants}|T],Islands) ->
-    NewIslands = mas_misc_util:map_index(Immigrants,Destination,Islands,fun lists:append/2),
-    append(T,NewIslands).
+append([{Destination, Immigrants} | T], Islands) ->
+    NewIslands = mas_misc_util:map_index(Immigrants,
+                                         Destination,
+                                         Islands,
+                                         fun lists:append/2),
+    append(T, NewIslands).
