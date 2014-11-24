@@ -159,9 +159,10 @@ check(#state{emigrants = Emigrants,
     WriteInterval = Cf#config.write_interval,
     case mas_misc_util:log_now(LastLog, Cf) of
         {yes, NewLog} ->
-            mas_logger:log_countstat(Supervisor, migration, length(Emigrants)),
-            [mas_logger:log_funstat(Supervisor, StatName, Val)
-             || {StatName, _MapFun, _ReduceFun, Val} <- Funstats],
+            exometer:update([Supervisor,migration], length(Emigrants)),
+%%             mas_logger:log_countstat(Supervisor, migration, length(Emigrants)),
+%%             [mas_logger:log_funstat(Supervisor, StatName, Val)
+%%              || {StatName, _MapFun, _ReduceFun, Val} <- Funstats],
             timer:send_after(WriteInterval, timer),
             {[], [], NewLog};
         notyet ->

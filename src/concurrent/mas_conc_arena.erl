@@ -110,13 +110,8 @@ handle_call({interact, Agent},
 
             case mas_misc_util:log_now(St#state.lastLog, Cf) of
                 {yes, NewLog} ->
-                    mas_logger:log_countstat(St#state.supervisor,
-                                             St#state.interaction,
-                                             NewCounter),
-                    [mas_logger:log_funstat(St#state.supervisor,
-                                            StatName,
-                                            Val)
-                     || {StatName, _MapFun, _ReduceFun, Val} <- NewFunstats],
+                    exometer:update([St#state.supervisor, St#state.interaction],
+                                    NewCounter),
                     {noreply,St#state{waitlist = [],
                                       agentFroms = [],
                                       lastLog = NewLog,
@@ -164,7 +159,7 @@ terminate(_Reason, _State) ->
 
 -spec code_change(OldVsn :: term() | {down, term()}, State :: #state{},
                   Extra :: term()) ->
-             {ok, NewState :: #state{}} | {error, Reason :: term()}.
+                         {ok, NewState :: #state{}} | {error, Reason :: term()}.
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
 
