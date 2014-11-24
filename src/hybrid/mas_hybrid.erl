@@ -53,7 +53,7 @@ init([Time, SP, Cf = #config{islands = Islands}]) ->
     mas_misc_util:initialize_subscriptions(Pids, Cf),
     {ok,Pids}.
 
--spec handle_call(term(),{pid(),term()},state()) ->
+-spec handle_call(term(), {pid(), term()}, state()) ->
                          {reply,term(),state()} |
                          {reply,term(),state(),hibernate | infinity | non_neg_integer()} |
                          {noreply,state()} |
@@ -63,7 +63,7 @@ init([Time, SP, Cf = #config{islands = Islands}]) ->
 handle_call(_, _, State) ->
     {noreply, State}.
 
--spec handle_cast(term(),state()) ->
+-spec handle_cast(term(), state()) ->
                          {noreply,state()} |
                          {noreply,state(),hibernate | infinity | non_neg_integer()} |
                          {stop,term(),state()}.

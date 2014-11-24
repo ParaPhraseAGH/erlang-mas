@@ -41,14 +41,21 @@ sendAgent(Pid, Agent) ->
 %% ====================================================================
 %% Internal functions
 %% ====================================================================
-%% @doc The main island process loop. A new generation of the population is created in every iteration.
--spec loop([agent()], counter(), [tuple()], sim_params(), config()) -> [agent()].
+%% @doc The main island process loop.
+%% A new generation of the population is created in every iteration.
+-spec loop([agent()], counter(), [tuple()], sim_params(), config()) ->
+                  [agent()].
 loop(Agents, InteractionCounter, Funstats, SP, Cf) ->
     receive
         write ->
             [exometer:update([self(), Interaction], Val)
              || {Interaction, Val} <- dict:to_list(InteractionCounter)],
-            loop(Agents, mas_misc_util:create_new_counter(Cf), Funstats, SP, Cf);
+
+            loop(Agents,
+                 mas_misc_util:create_new_counter(Cf),
+                 Funstats,
+                 SP,
+                 Cf);
 
         {agent, _Pid, A} ->
             loop([A | Agents], InteractionCounter, Funstats, SP, Cf);
