@@ -18,7 +18,7 @@
 start(Time, SP, Cf = #config{islands = Islands, agent_env = Env}) ->
     mas_misc_util:seed_random(),
     mas_misc_util:clear_inbox(),
-    mas_misc_util:initialize_subscriptions(Cf),
+    mas_misc_util:initialize_subscriptions(lists:seq(1, Islands), Cf),
     mas_topology:start_link(self(), Islands, Cf#config.topology),
     InitIslands = [mas_misc_util:generate_population(SP, Cf)
                    || _ <- lists:seq(1, Islands)],

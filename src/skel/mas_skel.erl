@@ -19,7 +19,7 @@
 -spec start(Time::pos_integer(), sim_params(), config()) -> ok.
 start(Time, SP, Cf = #config{islands = Islands, agent_env = Env}) ->
     mas_topology:start_link(self(), Islands, Cf#config.topology),
-    mas_misc_util:initialize_subscriptions(Cf),
+    mas_misc_util:initialize_subscriptions(lists:seq(1, Islands), Cf),
     mas_misc_util:seed_random(),
     mas_misc_util:clear_inbox(),
     Population = [{I, Env:initial_agent(SP)} ||
