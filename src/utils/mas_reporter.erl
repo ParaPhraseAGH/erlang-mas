@@ -123,15 +123,23 @@ create_fd([Path | []]) ->
     {ok, FD} = file:open(Path ++ ".txt", [append, delayed_write, raw]),
     FD;
 
-create_fd([Folder, Next | Rest]) when is_list(Folder) andalso is_list(Next)->
-    StringFolder = io_lib:format("~p", [Folder]),
-    StringNext = io_lib:format("~p", [Next]),
+create_fd([Folder, Next | Rest]) ->
+    StringFolder = to_string(Folder),
+    StringNext = to_string(Next),
     case file:make_dir(StringFolder) of
             ok -> ok;
             {error, eexist} -> already_exists;
             {error, Reason} -> erlang:error(Reason)
     end,
     create_fd([filename:join([StringFolder, StringNext]) | Rest]).
+
+
+-spec to_string(term()) -> string().
+to_string(X) when is_list(X)->
+    X;
+
+to_string(X) ->
+    hd(io_lib:format("~p", [X])).
 
 
 -spec close_file(standard_io | file:fd()) -> ok.
