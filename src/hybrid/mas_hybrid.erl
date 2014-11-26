@@ -43,8 +43,9 @@ send_result(Agents) ->
 %% ====================================================================
 %% Callbacks
 %% ====================================================================
--spec init(term()) -> {ok, state()} |
-                      {ok, state(), non_neg_integer()}.
+-spec init(Args :: term()) -> {ok, State :: state()} |
+                              {ok, State :: state(), timeout() | hibernate} |
+                              {stop, Reason :: term()} | ignore.
 init([Time, SP, Cf = #config{islands = Islands}]) ->
     timer:send_after(Time, theEnd),
     Pids = [spawn_link(mas_hybrid_island, start, [SP, Cf])
@@ -53,39 +54,47 @@ init([Time, SP, Cf = #config{islands = Islands}]) ->
     mas_misc_util:initialize_subscriptions(Pids, Cf),
     {ok,Pids}.
 
--spec handle_call(term(), {pid(), term()}, state()) ->
-                         {reply,term(),state()} |
-                         {reply,term(),state(),hibernate | infinity | non_neg_integer()} |
-                         {noreply,state()} |
-                         {noreply,state(),hibernate | infinity | non_neg_integer()} |
-                         {stop,term(),term(),state()} |
-                         {stop,term(),state()}.
+-spec handle_call(Request :: term(),
+                  From :: {pid(), Tag :: term()},
+                  State :: state()) ->
+                         {reply, Reply :: term(), NewState :: state()} |
+                         {reply, Reply :: term(), NewState :: state(),
+                          timeout() | hibernate} |
+                         {noreply, NewState :: state()} |
+                         {noreply, NewState :: state(),
+                          timeout() | hibernate} |
+                         {stop, Reason :: term(), Reply :: term(),
+                          NewState :: state()} |
+                         {stop, Reason :: term(), NewState :: state()}.
 handle_call(_, _, State) ->
     {noreply, State}.
 
--spec handle_cast(term(), state()) ->
-                         {noreply,state()} |
-                         {noreply,state(),hibernate | infinity | non_neg_integer()} |
-                         {stop,term(),state()}.
+-spec handle_cast(Request :: term(), State :: state())
+                 -> {noreply, NewState :: state()} |
+                    {noreply, cleaning, timeout() | hibernate} |
+                    {stop, Reason :: term(), NewState :: state()}.
 handle_cast({agent, From, Agent}, Pids) ->
     IslandFrom = mas_misc_util:find(From, Pids),
     IslandTo = mas_topology:getDestination(IslandFrom),
     mas_hybrid_island:sendAgent(lists:nth(IslandTo, Pids), Agent),
     {noreply, Pids}.
 
--spec handle_info(term(),state()) ->
-                         {noreply,state()} |
-                         {noreply,state(),hibernate | infinity | non_neg_integer()} |
-                         {stop,term(),state()}.
+-spec handle_info(Info :: timeout() | term(), State :: state())
+                 -> {noreply, NewState :: state()} |
+                    {noreply, NewState :: state(), timeout() | hibernate} |
+                    {stop, Reason :: term(), NewState :: state()}.
 handle_info(theEnd, Pids) ->
     {stop, normal, Pids}.
 
--spec terminate(term(), state()) -> no_return().
+-spec terminate(Reason :: (normal | shutdown | {shutdown, term()} | term()),
+                State :: state()) -> term().
 terminate(_Reason, Pids) ->
     [mas_hybrid_island:close(Pid) || Pid <- Pids],
     mas_topology:close().
 
--spec code_change(term(), state(), term()) -> {ok, state()}.
+-spec code_change(OldVsn :: term() | {down, term()}, State :: state(),
+                  Extra :: term()) ->
+                         {ok, NewState :: state()} | {error, Reason :: term()}.
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
 

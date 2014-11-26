@@ -154,7 +154,7 @@ check(#state{emigrants = Emigrants,
     WriteInterval = Cf#config.write_interval,
     case mas_misc_util:log_now(LastLog, Cf) of
         {yes, NewLog} ->
-            exometer:update([Supervisor,migration], length(Emigrants)),
+            exometer:update([Supervisor, migration], length(Emigrants)),
             timer:send_after(WriteInterval, timer),
             {[], [], NewLog};
         notyet ->

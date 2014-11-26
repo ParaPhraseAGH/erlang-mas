@@ -139,7 +139,8 @@ add_interactions_to_counter(Groups, Counter) ->
                 end, Counter, Groups).
 
 
--spec add_miliseconds({integer(),integer(),integer()},integer()) -> {integer(),integer(),integer()}.
+-spec add_miliseconds({integer(), integer(), integer()}, integer()) ->
+                             {integer(), integer(), integer()}.
 add_miliseconds({MegaSec, Sec, Milisec}, Time) ->
     {MegaSec,
      Sec + (Time div 1000),

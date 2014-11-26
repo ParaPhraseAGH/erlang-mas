@@ -19,7 +19,8 @@
 start(Time, SP, Cf = #config{islands = Islands}) ->
     mas_misc_util:clear_inbox(),
     mas_topology:start_link(self(), Islands, Cf#config.topology),
-    Supervisors = [mas_conc_supervisor:start(SP, Cf) || _ <- lists:seq(1,Islands)],
+    Supervisors = [mas_conc_supervisor:start(SP, Cf)
+                   || _ <- lists:seq(1, Islands)],
     mas_misc_util:initialize_subscriptions(Supervisors, Cf),
     receive
         ready ->

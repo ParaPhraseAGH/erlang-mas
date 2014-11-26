@@ -38,7 +38,8 @@ start(Time, SP, Cf = #config{islands = Islands}) ->
 %% Internal functions
 %% ====================================================================
 
-%% @doc The main island process loop. A new generation of the population is created in every iteration.
+%% @doc The main island process loop.
+%% A new generation of the population is created in every iteration.
 -spec loop([island()], [counter()], sim_params(), config()) -> [agent()].
 loop(Islands, Counters, SP, Cf) ->
     receive
