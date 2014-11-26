@@ -15,8 +15,6 @@
                 agentFroms = [] ::[pid()],
                 arenas :: dict:dict(),
                 interaction :: atom(),
-                lastLog :: erlang:timestamp(),
-                counter = 0 :: non_neg_integer(),
                 sim_params :: sim_params(),
                 config :: config()}).
 
@@ -64,7 +62,6 @@ close(Pid) ->
 init([Supervisor, Interaction, SP, Cf]) ->
     mas_misc_util:seed_random(),
     {ok, #state{supervisor = Supervisor,
-                lastLog = os:timestamp(),
                 interaction = Interaction,
                 sim_params = SP,
                 config = Cf}, Cf#config.arena_timeout}.
@@ -100,23 +97,11 @@ handle_call({interact, Agent},
                                             Cf),
             respond(NewAgents, Froms, St#state.arenas, SP, Cf),
 
-            NewCounter = St#state.counter + length(Waitlist), % tu blad?!
+            exometer:update([St#state.supervisor, St#state.interaction],
+                            ?AGENT_THRESHOLD),
 
-            case mas_misc_util:log_now(St#state.lastLog, Cf) of
-                {yes, NewLog} ->
-                    exometer:update([St#state.supervisor, St#state.interaction],
-                                    NewCounter),
-                    {noreply,St#state{waitlist = [],
-                                      agentFroms = [],
-                                      lastLog = NewLog,
-                                      counter = 0}, Cf#config.arena_timeout};
-                notyet ->
-                    {noreply,
-                     St#state{waitlist = [],
-                              agentFroms = [],
-                              counter = NewCounter},
-                     Cf#config.arena_timeout}
-            end;
+            {noreply, St#state{waitlist = [],
+                               agentFroms = []}, Cf#config.arena_timeout};
         _ ->
             {noreply,
              St#state{agentFroms = Froms, waitlist = Waitlist},
