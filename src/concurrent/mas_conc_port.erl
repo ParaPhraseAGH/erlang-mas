@@ -47,10 +47,6 @@ close(Pid) ->
 %% ====================================================================
 -record(state, {mySupervisor :: pid(),
                 arenas :: arenas(),
-                funstats :: [funstat()],
-                emigrants = [] :: [pid()],
-                immigrants = [] :: [{pid(), agent()}],
-                lastLog :: erlang:timestamp(),
                 config :: config()}).
 
 -type state() :: #state{} | cleaning.
@@ -58,14 +54,9 @@ close(Pid) ->
 
 -spec init([pid()]) -> {ok, state()} |
                        {ok, state(), non_neg_integer()}.
-init([Supervisor, Cf = #config{write_interval = WriteInterval}]) ->
+init([Supervisor, Cf]) ->
     mas_misc_util:seed_random(),
-    timer:send_after(WriteInterval, timer),
-    Env = Cf#config.agent_env,
-    Funstats = Env:stats(),
     {ok, #state{mySupervisor = Supervisor,
-                lastLog = os:timestamp(),
-                funstats = Funstats,
                 config = Cf}}.
 
 
@@ -86,13 +77,10 @@ handle_call({emigrate, _Agent}, {Pid, _}, cleaning) ->
     exit(Pid, finished),
     {noreply, cleaning, ?TIMEOUT};
 
-handle_call({emigrate, Agent}, From, St) ->
-    {HisPid, _} = From,
-    {Emigrants, Immigrants, LastLog} = check(St),
+handle_call({emigrate, Agent}, From, St = #state{mySupervisor = Sup}) ->
     mas_topology:emigrant({Agent, From}),
-    {noreply, St#state{emigrants = [HisPid|Emigrants],
-                       immigrants = Immigrants,
-                       lastLog = LastLog}}.
+    exometer:update([Sup, migration], 1),
+    {noreply, St}.
 
 
 -spec handle_cast(term(), state()) ->
@@ -105,16 +93,11 @@ handle_cast({immigrant, {_Agent, {Pid, _}}}, cleaning) ->
     exit(Pid, finished),
     {noreply, cleaning, ?TIMEOUT};
 
-handle_cast({immigrant, {Agent, From}}, St) ->
+handle_cast({immigrant, {_Agent, From}}, St) ->
     gen_server:reply(From, St#state.arenas),
-    {Emigrants, Immigrants, LastLog} = check(St),
-    {HisPid, _} = From,
-    {noreply, St#state{immigrants = [{HisPid, Agent}|Immigrants],
-                       emigrants = Emigrants,
-                       lastLog = LastLog}};
+    {noreply, St};
 
-handle_cast(close, St) ->
-    _ = check(St),
+handle_cast(close, _St) ->
     {noreply, cleaning, ?TIMEOUT}.
 
 
@@ -124,16 +107,7 @@ handle_cast(close, St) ->
                           hibernate | infinity | non_neg_integer()} |
                          {stop, term(), state()}.
 handle_info(timeout, cleaning) ->
-    {stop, normal, cleaning};
-
-handle_info(timer, cleaning) ->
-    {noreply, cleaning, ?TIMEOUT};
-
-handle_info(timer, St) ->
-    {Emigrants, Immigrants, LastLog} = check(St),
-    {noreply, St#state{emigrants = Emigrants,
-                          immigrants = Immigrants,
-                          lastLog = LastLog}}.
+    {stop, normal, cleaning}.
 
 
 -spec terminate(term(), state()) -> no_return().
@@ -144,26 +118,3 @@ terminate(_Reason, _State) ->
 -spec code_change(term(), state(), term()) -> {ok, state()}.
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
-
-%% ====================================================================
-%% Internal functions
-%% ====================================================================
-
--spec check(state()) -> {[pid()], [{pid(), agent()}], erlang:timestamp()}.
-check(#state{emigrants = Emigrants,
-             immigrants = Immigrants,
-             funstats = Funstats,
-             lastLog = LastLog,
-             mySupervisor = Supervisor,
-             config = Cf}) ->
-    WriteInterval = Cf#config.write_interval,
-    case mas_misc_util:log_now(LastLog, Cf) of
-        {yes, NewLog} ->
-            mas_logger:log_countstat(Supervisor, migration, length(Emigrants)),
-            [mas_logger:log_funstat(Supervisor, StatName, Val)
-             || {StatName, _MapFun, _ReduceFun, Val} <- Funstats],
-            timer:send_after(WriteInterval, timer),
-            {[], [], NewLog};
-        notyet ->
-            {Emigrants, Immigrants, LastLog}
-    end.

@@ -4,8 +4,6 @@
 
 -type model() :: mas_sequential | mas_hybrid | mas_concurrent | mas_skel.
 
--type funstat() :: {Name::atom(), Map::fun(), Reduce::fun(), Value::term()}.
-
 -record(config, {model :: model(),
                  agent_env :: atom(),
                  topology :: atom(),

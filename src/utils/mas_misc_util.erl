@@ -11,7 +11,6 @@
          average_number/2,
          map_index/4,
          shortest_zip/2,
-         count_funstats/2,
          seed_random/0,
          log_now/2,
          meeting_proxy/4,
@@ -20,7 +19,8 @@
          add_miliseconds/2,
          generate_population/2,
          determine_behaviours/1,
-         behaviour_proxy/3]).
+         behaviour_proxy/3,
+         initialize_subscriptions/2]).
 
 -include ("mas.hrl").
 
@@ -101,7 +101,18 @@ average_number(Probability, List) ->
     end.
 
 
--spec log_now(erlang:timestamp(), config()) -> {yes,erlang:timestamp()} | notyet.
+-spec initialize_subscriptions(list(pid() | integer()), config()) -> [ok].
+initialize_subscriptions(Islands, Cf = #config{write_interval = Int}) ->
+    Stats = determine_behaviours(Cf),
+    [begin
+         Metric = [I, S],
+         exometer:new(Metric, counter),
+         exometer_report:subscribe(mas_reporter, Metric, value, Int)
+     end || S <- Stats, I <- Islands].
+
+
+-spec log_now(erlang:timestamp(), config()) ->
+                     {yes,erlang:timestamp()} | notyet.
 log_now(LastLog, #config{write_interval = WriteInterval}) ->
     Now = os:timestamp(),
     Diff = timer:now_diff(Now, LastLog),
@@ -128,18 +139,8 @@ add_interactions_to_counter(Groups, Counter) ->
                 end, Counter, Groups).
 
 
--spec count_funstats([agent()], [funstat()]) -> [funstat()].
-count_funstats(_, []) ->
-    [];
-
-count_funstats(Agents, [{Stat, MapFun, ReduceFun, OldAcc}|T]) ->
-    NewAcc = lists:foldl(ReduceFun,
-                         OldAcc,
-                         [MapFun(Agent) || Agent <- Agents]),
-    [{Stat, MapFun, ReduceFun, NewAcc} | count_funstats(Agents,T)].
-
-
--spec add_miliseconds({integer(),integer(),integer()},integer()) -> {integer(),integer(),integer()}.
+-spec add_miliseconds({integer(), integer(), integer()}, integer()) ->
+                             {integer(), integer(), integer()}.
 add_miliseconds({MegaSec, Sec, Milisec}, Time) ->
     {MegaSec,
      Sec + (Time div 1000),

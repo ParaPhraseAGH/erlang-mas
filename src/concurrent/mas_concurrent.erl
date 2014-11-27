@@ -17,11 +17,11 @@
 
 -spec start(Time::pos_integer(), mas:sim_params(), config()) -> [agent()].
 start(Time, SP, Cf = #config{islands = Islands}) ->
-%%     io:format("{Model=Concurrent,Time=~p,Islands=~p,Topology=~p}~n",[Time,Islands,Topology]),
     mas_misc_util:clear_inbox(),
     mas_topology:start_link(self(), Islands, Cf#config.topology),
-    Supervisors = [mas_conc_supervisor:start(SP, Cf) || _ <- lists:seq(1,Islands)],
-    mas_logger:start_link(Supervisors, Cf),
+    Supervisors = [mas_conc_supervisor:start(SP, Cf)
+                   || _ <- lists:seq(1, Islands)],
+    mas_misc_util:initialize_subscriptions(Supervisors, Cf),
     receive
         ready ->
             trigger(Supervisors)
@@ -30,7 +30,6 @@ start(Time, SP, Cf = #config{islands = Islands}) ->
     timer:sleep(Time),
     [ok = mas_conc_supervisor:close(Pid) || Pid <- Supervisors],
     mas_topology:close(),
-    mas_logger:close(),
     Agents = receive_results(),
     unregister(?RESULT_SINK),
     Agents.

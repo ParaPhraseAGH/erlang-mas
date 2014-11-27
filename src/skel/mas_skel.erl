@@ -19,7 +19,7 @@
 -spec start(Time::pos_integer(), sim_params(), config()) -> ok.
 start(Time, SP, Cf = #config{islands = Islands, agent_env = Env}) ->
     mas_topology:start_link(self(), Islands, Cf#config.topology),
-    mas_logger:start_link(lists:seq(1, Cf#config.islands), Cf),
+    mas_misc_util:initialize_subscriptions(lists:seq(1, Islands), Cf),
     mas_misc_util:seed_random(),
     mas_misc_util:clear_inbox(),
     Population = [{I, Env:initial_agent(SP)} ||
@@ -27,9 +27,7 @@ start(Time, SP, Cf = #config{islands = Islands, agent_env = Env}) ->
                      I <- lists:seq(1, Islands)],
     {_Time, Result} = timer:tc(fun main/4, [Population, Time, SP, Cf]),
     mas_topology:close(),
-    mas_logger:close(),
     Result.
-%%     io:format("Total time:   ~p s~nFitness:     ~p~n", [_Time / 1000000, _Result]).
 
 %% ====================================================================
 %% Internal functions
@@ -58,7 +56,6 @@ main(Population, Time, SP, Cf) ->
 
     LogFun = fun(Groups) ->
                      log_countstats(Groups, Cf),
-                     log_funstats(Groups, Cf),
                      Groups
              end,
 
@@ -69,10 +66,6 @@ main(Population, Time, SP, Cf) ->
                       end,
                       Groups)
             end,
-
-
-
-
 
     TMGLS = fun (Agents) ->
                     Tagged = lists:map(TagFun,
@@ -86,10 +79,13 @@ main(Population, Time, SP, Cf) ->
 
 
     Work = {seq, fun({{Home, Behaviour}, Agents}) ->
-                     seed_random_once_per_process(),
-                     NewAgents =
-                         mas_misc_util:meeting_proxy({Behaviour, Agents}, mas_skel, SP, Cf),
-                     [{Home, A} || A <- NewAgents]
+                         seed_random_once_per_process(),
+                         NewAgents =
+                             mas_misc_util:meeting_proxy({Behaviour, Agents},
+                                                         mas_skel,
+                                                         SP,
+                                                         Cf),
+                         [{Home, A} || A <- NewAgents]
                  end },
 
     Shuffle = {seq, fun(Agents) ->
@@ -109,11 +105,11 @@ main(Population, Time, SP, Cf) ->
                        Shuffle]},
 
     [FinalIslands] = skel:do([{feedback,
-                                [Workflow],
-                                _While = fun(_Agents) ->
-                                                 os:timestamp() < EndTime
-                                         end}],
-                              [Population]),
+                               [Workflow],
+                               _While = fun(_Agents) ->
+                                                os:timestamp() < EndTime
+                                        end}],
+                             [Population]),
     _FinalAgents =
         [Agent || {_Island, Agent} <- FinalIslands].
 
@@ -133,27 +129,9 @@ log_countstats(Groups, Cf) ->
                                      dict:store(Home, NewIslandDict, AccBD)
                              end, BigDict, Groups),
 
-    [[mas_logger:log_countstat(Island, Stat, Val)
+    [[exometer:update([Island, Stat], Val)
       || {Stat, Val} <- dict:to_list(Counter)]
      || {Island, Counter} <- dict:to_list(NewBigDict)],
-
-    ok.
-
--spec log_funstats([tuple()], config()) -> ok.
-log_funstats(Groups, Cf) ->
-    Env = Cf#config.agent_env,
-    FunstatDict = dict:from_list([{I, Env:stats()}
-                                  || I <- lists:seq(1, Cf#config.islands)]),
-
-    NewDict = lists:foldl(fun({{Home, _Beh}, Agents}, Dict) ->
-                                  Funstats = dict:fetch(Home, Dict),
-                                  NewFunstats = mas_misc_util:count_funstats(Agents, Funstats),
-                                  dict:store(Home, NewFunstats, Dict)
-                          end, FunstatDict, Groups),
-
-    [[mas_logger:log_funstat(Home, Stat, Val)
-      || {Stat, _Map, _Reduce, Val} <- Stats]
-     || {Home, Stats} <- dict:to_list(NewDict)],
 
     ok.
 
@@ -169,7 +147,6 @@ seed_random_once_per_process() ->
     end.
 
 
-
 %% @doc Split given group of agents into list of max size `Size`, with
 %% keeping tags (island number in our case) exactly the same.x
 -spec split(Group, Size) -> Groups when
@@ -183,7 +160,6 @@ split(_Group = {Tag, Agents}, Size) ->
     [{Tag, AL} || AL <- AgentsLists].
 
 
-
 -spec partition([A], Size) -> [[A]] when
       A :: any(),
       Size :: pos_integer().
@@ -193,6 +169,7 @@ partition(List, Size) ->
 partition(List, Size, Acc) when
       length (List) =< Size ->
     [List | Acc];
+
 partition(List, Size, Acc) ->
     {Part, Rest} = lists:split(Size, List),
     partition(Rest, Size, [Part | Acc]).
