@@ -66,9 +66,10 @@ loop(Islands, Counters, SP, Cf) ->
             Groups = [mas_misc_util:group_by(Tag(I))
                       || I <- Islands],
 
+            IslandSeq = lists:seq(1, length(Groups)),
+
             Emigrants = [seq_migrate(lists:keyfind(migration, 1, Island), Nr)
-                         || {Island, Nr} <- lists:zip(Groups,
-                                                      lists:seq(1, length(Groups)))],
+                         || {Island, Nr} <- lists:zip(Groups, IslandSeq)],
 
             NewGroups = [[mas_misc_util:meeting_proxy(Activity,
                                                       mas_sequential,

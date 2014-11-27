@@ -60,16 +60,19 @@ loop(Agents, InteractionCounter, SP, Cf) ->
         {finish, _Pid} ->
             Agents
     after 0 ->
-            Groups = mas_misc_util:group_by([{mas_misc_util:behaviour_proxy(A, SP, Cf), A}
-                                             || A <- Agents ]),
+            Tagged = [{mas_misc_util:behaviour_proxy(A, SP, Cf), A}
+                      || A <- Agents ],
+
+            Groups = mas_misc_util:group_by(Tagged),
 
             NewGroups = [mas_misc_util:meeting_proxy(G, mas_hybrid, SP, Cf)
                          || G <- Groups],
 
             NewAgents = mas_misc_util:shuffle(lists:flatten(NewGroups)),
 
-            NewCounter = mas_misc_util:add_interactions_to_counter(Groups,
-                                                                   InteractionCounter),
+            NewCounter =
+                mas_misc_util:add_interactions_to_counter(Groups,
+                                                          InteractionCounter),
 
             loop(NewAgents, NewCounter, SP, Cf)
     end.
