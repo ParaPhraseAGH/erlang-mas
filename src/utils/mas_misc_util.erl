@@ -92,14 +92,16 @@ determine_behaviours(#config{agent_env = Env}) ->
 %% that are chosen with given probability
 -spec average_number(float(), [term()]) -> integer().
 average_number(Probability, List) ->
-    N = Probability * length(List),
-    if N == 0 -> 0;
-       N < 1 ->
+    case Probability * length(List) of
+        N when N == 0 ->
+            0;
+        N when N < 1 ->
             case random:uniform() < N of
                 true -> 1;
                 false -> 0
             end;
-       N >=1 -> trunc(N)
+        N when N >= 1 ->
+            trunc(N)
     end.
 
 
@@ -142,7 +144,7 @@ log_now(LastLog, #config{write_interval = WriteInterval}) ->
 -spec create_new_counter(config()) -> counter().
 create_new_counter(Config) ->
     BehaviourList = [{Behaviour, 0}
-        || Behaviour <- determine_behaviours(Config)],
+                     || Behaviour <- determine_behaviours(Config)],
     dict:from_list(BehaviourList).
 
 
