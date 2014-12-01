@@ -73,8 +73,8 @@ meeting_proxy(Group, _, SP, #config{agent_env = Env}) ->
     Env:meeting_function(Group, SP).
 
 
--spec behaviour_proxy(agent(), sim_params(), config())
-                     -> agent_behaviour() | migration.
+-spec behaviour_proxy(agent(), sim_params(), config()) ->
+                             agent_behaviour() | migration.
 behaviour_proxy(Agent, SP, #config{migration_probability = MP, agent_env = Env}) ->
     case random:uniform() < MP of
         true -> migration;
@@ -103,6 +103,15 @@ average_number(Probability, List) ->
 
 -spec initialize_subscriptions(list(pid() | integer()), config()) -> [ok].
 initialize_subscriptions(Islands, Cf = #config{write_interval = Int}) ->
+    exometer_admin:set_default(['_'], mas_vm_probe, [{module, mas_vm_probe}]),
+    exometer:new([global, scheduler_wt],
+                 mas_vm_probe,
+                 [{sample_interval, Int}]),
+    exometer_report:subscribe(mas_reporter,
+                              [global, scheduler_wt],
+                              scheduler_wt,
+                              Int),
+
     Stats = determine_behaviours(Cf),
     [begin
          Metric = [I, S],
