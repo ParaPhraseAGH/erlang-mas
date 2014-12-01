@@ -33,10 +33,10 @@
 %% ====================================================================
 %% @doc Groups tuples as following:
 %% [{K1,V1},{K2,V2},...] -> [{K1,[V1,V3]},{K2,[V2,V4,V5]},...]
--spec group_by([{term(),term()}]) -> [{term(),[term()]}].
+-spec group_by([{term(), term()}]) -> [{term(), [term()]}].
 group_by(List) ->
     dict:to_list(
-      lists:foldl(fun({K,V}, D) ->
+      lists:foldl(fun({K, V}, D) ->
                           dict:append(K, V, D)
                   end , dict:new(), List)).
 
@@ -75,7 +75,8 @@ meeting_proxy(Group, _, SP, #config{agent_env = Env}) ->
 
 -spec behaviour_proxy(agent(), sim_params(), config()) ->
                              agent_behaviour() | migration.
-behaviour_proxy(Agent, SP, #config{migration_probability = MP, agent_env = Env}) ->
+behaviour_proxy(Agent, SP, #config{migration_probability = MP,
+                                   agent_env = Env}) ->
     case random:uniform() < MP of
         true -> migration;
         false -> Env:behaviour_function(Agent, SP)
@@ -87,8 +88,9 @@ determine_behaviours(#config{agent_env = Env}) ->
     [migration | Env:behaviours()].
 
 
-%% @doc Computes an average number of elements that are chosen with given probability
--spec average_number(float(),[term()]) -> integer().
+%% @doc Computes an average number of elements
+%% that are chosen with given probability
+-spec average_number(float(), [term()]) -> integer().
 average_number(Probability, List) ->
     N = Probability * length(List),
     if N == 0 -> 0;
@@ -103,7 +105,9 @@ average_number(Probability, List) ->
 
 -spec initialize_subscriptions(list(pid() | integer()), config()) -> [ok].
 initialize_subscriptions(Islands, Cf = #config{write_interval = Int}) ->
-    exometer_admin:set_default(['_'], mas_vm_probe, [{module, mas_vm_probe}]),
+    exometer_admin:set_default(['_'],
+                               mas_vm_probe,
+                               [{module, mas_vm_probe}]),
     exometer:new([global, scheduler_wt],
                  mas_vm_probe,
                  [{sample_interval, Int}]),
@@ -121,7 +125,7 @@ initialize_subscriptions(Islands, Cf = #config{write_interval = Int}) ->
 
 
 -spec log_now(erlang:timestamp(), config()) ->
-                     {yes,erlang:timestamp()} | notyet.
+                     {yes, erlang:timestamp()} | notyet.
 log_now(LastLog, #config{write_interval = WriteInterval}) ->
     Now = os:timestamp(),
     Diff = timer:now_diff(Now, LastLog),
@@ -137,7 +141,8 @@ log_now(LastLog, #config{write_interval = WriteInterval}) ->
 
 -spec create_new_counter(config()) -> counter().
 create_new_counter(Config) ->
-    BehaviourList = [{Behaviour,0} || Behaviour <- determine_behaviours(Config)],
+    BehaviourList = [{Behaviour, 0}
+        || Behaviour <- determine_behaviours(Config)],
     dict:from_list(BehaviourList).
 
 
@@ -156,10 +161,11 @@ add_miliseconds({MegaSec, Sec, Milisec}, Time) ->
      Milisec + (Time rem 1000)}.
 
 
-%% @doc Maps function F(Elem, A) -> A' to an element A of List with Index. Returns updated list
--spec map_index(Elem::term(), Index::integer(), List::[term()], F::fun()) -> [term()].
-map_index(Elem,Index,List,F) ->
-    map_index(Elem,Index,List,F,[]).
+%% @doc Maps function F(Elem, A) -> A' to an element A of List with Index.
+%% Returns updated list
+-spec map_index(term(), integer(), [term()], fun()) -> [term()].
+map_index(Elem, Index, List, F) ->
+    map_index(Elem, Index, List, F, []).
 
 
 -spec clear_inbox() -> ok.
@@ -171,15 +177,15 @@ clear_inbox() ->
     end.
 
 
--spec shortest_zip(list(),list()) -> list().
-shortest_zip(L1,L2) ->
-    shortest_zip(L1,L2,[]).
+-spec shortest_zip(list(), list()) -> list().
+shortest_zip(L1, L2) ->
+    shortest_zip(L1, L2, []).
 
 
 %% @doc Returns the index of a given element in a given list
--spec find(term(),[term()]) -> integer() | 'notFound'.
-find(Elem,List) ->
-    find(Elem,List,1).
+-spec find(term(), [term()]) -> integer() | 'notFound'.
+find(Elem, List) ->
+    find(Elem, List, 1).
 
 
 %% @doc This function is use case dependent and deprecated
@@ -188,10 +194,10 @@ result([]) ->
     islandEmpty;
 
 result(Agents) ->
-    lists:max([ Fitness || {_ ,Fitness, _} <- Agents]).
+    lists:max([ Fitness || {_, Fitness, _} <- Agents]).
 
 
--spec seed_random() -> {integer(),integer(),integer()}.
+-spec seed_random() -> {integer(), integer(), integer()}.
 seed_random() ->
     {_, B, C} = erlang:now(),
     Hash = erlang:phash2(node()),
@@ -202,34 +208,34 @@ seed_random() ->
 %% Internal functions
 %% ====================================================================
 
--spec find(term(),[term()],integer()) -> integer() | 'notFound'.
-find(Elem,[Elem|_],Inc) ->
+-spec find(term(), [term()], integer()) -> integer() | 'notFound'.
+find(Elem, [Elem | _], Inc) ->
     Inc;
 
-find(_,[],_) ->
+find(_, [], _) ->
     notFound;
 
-find(Elem,[_|T],Inc) ->
-    find(Elem,T,Inc+1).
+find(Elem, [_ | T], Inc) ->
+    find(Elem, T, Inc + 1).
 
 
--spec map_index(Elem::term(), Index::integer(), List::[term()], F::fun(), Acc::[term()]) -> [term()].
-map_index(_,_,[],_,_) ->
+-spec map_index(term(), integer(), [term()], fun(), [term()]) -> [term()].
+map_index(_, _, [], _, _) ->
     erlang:error(wrongIndex);
 
-map_index(Elem,1,[H|T],F,Acc) ->
-    lists:reverse(Acc,[F(Elem,H)|T]);
+map_index(Elem, 1, [H | T], F, Acc) ->
+    lists:reverse(Acc, [F(Elem, H) | T]);
 
-map_index(Elem,Index,[H|T],F,Acc) ->
-    map_index(Elem,Index - 1,T,F,[H|Acc]).
+map_index(Elem, Index, [H | T], F, Acc) ->
+    map_index(Elem, Index - 1, T, F, [H | Acc]).
 
 
 -spec shortest_zip(list(), list(), list()) -> list().
-shortest_zip([],_L2,Acc) ->
+shortest_zip([], _L2, Acc) ->
     Acc;
 
-shortest_zip(_L1,[],Acc) ->
+shortest_zip(_L1, [], Acc) ->
     Acc;
 
-shortest_zip([H1|T1],[H2|T2],Acc) ->
-    shortest_zip(T1,T2,[{H1,H2}|Acc]).
+shortest_zip([H1 | T1], [H2 | T2], Acc) ->
+    shortest_zip(T1, T2, [{H1, H2} | Acc]).
