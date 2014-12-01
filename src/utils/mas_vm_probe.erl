@@ -7,13 +7,13 @@
          probe_reset/1, probe_sample/1, probe_handle_msg/2,
          probe_code_change/3]).
 
--record(state, {old_walltime :: tuple(),
+-record(state, {old_walltime :: [tuple()],
                 scheduler_wt :: [tuple()]}).
 
 -type name()            :: exometer:name().
 -type options()         :: exometer:options().
 -type type()            :: exometer:type().
--type mod_state()       :: #state{}.
+-type mod_state()       :: any().
 -type data_points()     :: [atom()].
 -type probe_reply()     :: ok
                          | {ok, mod_state()}
