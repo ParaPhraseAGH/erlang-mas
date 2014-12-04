@@ -127,7 +127,7 @@ initialize_subscriptions(Islands, Cf = #config{write_interval = Int}) ->
      end || S <- Stats, I <- Islands].
 
 
--spec close_subscriptions(list(pid() | integer()), config()) -> [ok].
+-spec close_subscriptions(list(pid() | integer()), config()) -> ok.
 close_subscriptions(Islands, Cf) ->
     [begin
          exometer_report:unsubscribe_all(mas_reporter,
