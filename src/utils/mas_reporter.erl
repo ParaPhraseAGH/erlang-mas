@@ -29,7 +29,7 @@
 
 -spec add_reporter(config()) -> ok.
 add_reporter(Config) ->
-    ok = exometer_report:add_reporter(?MODULE, [{config, Config}]).
+    exometer_report:add_reporter(?MODULE, [{config, Config}]).
 
 %%%===================================================================
 %%% Callbacks

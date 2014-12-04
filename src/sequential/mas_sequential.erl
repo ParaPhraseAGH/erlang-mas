@@ -31,6 +31,7 @@ start(Time, SP, Cf = #config{islands = Islands}) ->
                                 SP,
                                 Cf]),
     timer:cancel(TRef),
+    mas_misc_util:close_subscriptions(lists:seq(1, Islands), Cf),
     mas_topology:close(),
     Result.
 

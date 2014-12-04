@@ -20,7 +20,8 @@
          generate_population/2,
          determine_behaviours/1,
          behaviour_proxy/3,
-         initialize_subscriptions/2]).
+         initialize_subscriptions/2,
+         close_subscriptions/2]).
 
 -include ("mas.hrl").
 
@@ -124,6 +125,20 @@ initialize_subscriptions(Islands, Cf = #config{write_interval = Int}) ->
          exometer:new(Metric, counter),
          exometer_report:subscribe(mas_reporter, Metric, value, Int)
      end || S <- Stats, I <- Islands].
+
+
+-spec close_subscriptions(list(pid() | integer()), config()) -> ok.
+close_subscriptions(Islands, Cf) ->
+    [begin
+         exometer_report:unsubscribe_all(mas_reporter,
+                                         [Key, Stat]),
+         exometer:delete([Key, Stat])
+     end || Key <- Islands, Stat <- determine_behaviours(Cf)],
+
+    exometer_report:unsubscribe_all(mas_reporter,
+                                    [global, scheduler_wt]),
+    exometer:delete([global, scheduler_wt]).
+
 
 
 -spec log_now(erlang:timestamp(), config()) ->
