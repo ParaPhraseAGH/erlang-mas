@@ -26,6 +26,7 @@ start(Time, SP, Cf = #config{islands = Islands, agent_env = Env}) ->
                      _ <- lists:seq(1, Cf#config.population_size),
                      I <- lists:seq(1, Islands)],
     {_Time, Result} = timer:tc(fun main/4, [Population, Time, SP, Cf]),
+    mas_misc_util:close_subscriptions(lists:seq(1, Islands), Cf),
     mas_topology:close(),
     Result.
 

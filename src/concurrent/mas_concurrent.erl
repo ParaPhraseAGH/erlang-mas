@@ -31,6 +31,7 @@ start(Time, SP, Cf = #config{islands = Islands}) ->
     [ok = mas_conc_supervisor:close(Pid) || Pid <- Supervisors],
     mas_topology:close(),
     Agents = receive_results(),
+    mas_misc_util:close_subscriptions(Supervisors, Cf),
     unregister(?RESULT_SINK),
     Agents.
 

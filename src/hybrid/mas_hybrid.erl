@@ -14,16 +14,19 @@
 -include ("mas.hrl").
 
 -define(RESULT_SINK, result_sink).
--type state() :: [pid()].
 -type agent() :: mas:agent().
 -type sim_params() :: mas:sim_params().
+
+-record(state, {pids :: list(pid()),
+                config :: config()}).
+-type state() :: #state{}.
 
 %% ====================================================================
 %% API functions
 %% ====================================================================
 -spec start(Time::pos_integer(), sim_params(), config()) -> [agent()].
 start(Time, SP, Cf) ->
-    {ok, _} = gen_server:start({local,?MODULE}, ?MODULE, [Time, SP, Cf], []),
+    {ok, _} = gen_server:start({local, ?MODULE}, ?MODULE, [Time, SP, Cf], []),
     register(?RESULT_SINK, self()),
     Islands = [receive_results() || _ <- lists:seq(1, Cf#config.islands)],
     unregister(?RESULT_SINK),
@@ -32,7 +35,7 @@ start(Time, SP, Cf) ->
 %% @doc Asynchronously sends an agent from an arena to the supervisor
 -spec sendAgent(agent()) -> ok.
 sendAgent(Agent) ->
-    gen_server:cast(whereis(?MODULE), {agent,self(),Agent}).
+    gen_server:cast(whereis(?MODULE), {agent, self(), Agent}).
 
 %% @doc Asynchronously send back result from an island
 -spec send_result([agent()]) -> ok.
@@ -52,7 +55,8 @@ init([Time, SP, Cf = #config{islands = Islands}]) ->
             || _ <- lists:seq(1, Islands)],
     mas_topology:start_link(self(), Islands, Cf#config.topology),
     mas_misc_util:initialize_subscriptions(Pids, Cf),
-    {ok,Pids}.
+    {ok, #state{pids = Pids,
+                config = Cf}}.
 
 -spec handle_call(Request :: term(),
                   From :: {pid(), Tag :: term()},
@@ -73,23 +77,24 @@ handle_call(_, _, State) ->
                  -> {noreply, NewState :: state()} |
                     {noreply, cleaning, timeout() | hibernate} |
                     {stop, Reason :: term(), NewState :: state()}.
-handle_cast({agent, From, Agent}, Pids) ->
+handle_cast({agent, From, Agent}, St = #state{pids = Pids}) ->
     IslandFrom = mas_misc_util:find(From, Pids),
     IslandTo = mas_topology:getDestination(IslandFrom),
     mas_hybrid_island:sendAgent(lists:nth(IslandTo, Pids), Agent),
-    {noreply, Pids}.
+    {noreply, St}.
 
 -spec handle_info(Info :: timeout() | term(), State :: state())
                  -> {noreply, NewState :: state()} |
                     {noreply, NewState :: state(), timeout() | hibernate} |
                     {stop, Reason :: term(), NewState :: state()}.
-handle_info(theEnd, Pids) ->
-    {stop, normal, Pids}.
+handle_info(theEnd, State) ->
+    {stop, normal, State}.
 
 -spec terminate(Reason :: (normal | shutdown | {shutdown, term()} | term()),
                 State :: state()) -> term().
-terminate(_Reason, Pids) ->
+terminate(_Reason, #state{pids = Pids, config = Cf}) ->
     [mas_hybrid_island:close(Pid) || Pid <- Pids],
+    mas_misc_util:close_subscriptions(Pids, Cf),
     mas_topology:close().
 
 -spec code_change(OldVsn :: term() | {down, term()}, State :: state(),
