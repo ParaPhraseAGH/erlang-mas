@@ -26,5 +26,6 @@
 -spec start(pos_integer(), sim_params(), config()) -> [agent()].
 start(Time, SP, ConfigRecord) ->
     application:ensure_all_started(exometer),
+    mas_reporter:add_reporter(ConfigRecord),
     Model = ConfigRecord#config.model,
     Model:start(Time, SP, ConfigRecord).
