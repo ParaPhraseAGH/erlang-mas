@@ -12,7 +12,7 @@
 
 -record(state, {supervisor :: pid(),
                 waitlist = [] :: list(),
-                agentFroms = [] ::[pid()],
+                agent_pids = [] ::[pid()],
                 arenas :: dict:dict(),
                 interaction :: atom(),
                 sim_params :: sim_params(),
@@ -42,7 +42,12 @@ start_link(Supervisor, Interaction, SP, Cf) ->
 %% @doc Sends a request with given agent to this arena
 -spec call(pid(), agent()) -> agent() | close.
 call(Pid, Agent) ->
-    gen_server:call(Pid, {interact, Agent}, infinity).
+    %%     gen_server:call(Pid, {interact, Agent}, infinity).
+    gen_server:cast(Pid, {interact, self(), Agent}),
+    receive
+        {response, Reply} ->
+            Reply
+    end.
 
 -spec giveArenas(pid(), arenas()) -> ok.
 giveArenas(Pid, Arenas) ->
@@ -80,14 +85,50 @@ init([Supervisor, Interaction, SP, Cf]) ->
                           NewState :: #state{}} |
                          {stop, Reason :: term(), NewState :: #state{}}.
 
-handle_call({interact, _Agent}, _From, cleaning) ->
-    {reply, the_end, cleaning, ?CLOSING_TIMEOUT};
+%% handle_call({interact, _Agent}, _From, cleaning) ->
+%%     {reply, the_end, cleaning, ?CLOSING_TIMEOUT};
+%%
+%% handle_call({interact, Agent},
+%%             From,
+%%             St = #state{sim_params = SP, config = Cf}) ->
+%%     Waitlist = [Agent | St#state.waitlist],
+%%     Froms = [From | St#state.agentFroms],
+%%     case length(Waitlist) of
+%%         ?AGENT_THRESHOLD ->
+%%             NewAgents =
+%%                 mas_misc_util:meeting_proxy({St#state.interaction, Waitlist},
+%%                                             mas_concurrent,
+%%                                             SP,
+%%                                             Cf),
+%%             respond(NewAgents, Froms, St#state.arenas, SP, Cf),
+%%
+%%             exometer:update([St#state.supervisor, St#state.interaction],
+%%                             ?AGENT_THRESHOLD),
+%%
+%%             {noreply, St#state{waitlist = [],
+%%                                agentFroms = []}, Cf#config.arena_timeout};
+%%         _ ->
+%%             {noreply,
+%%              St#state{agentFroms = Froms, waitlist = Waitlist},
+%%              Cf#config.arena_timeout}
+%%     end;
 
-handle_call({interact, Agent},
-            From,
-            St = #state{sim_params = SP, config = Cf}) ->
+handle_call({arenas, Arenas}, _From, St = #state{config = Cf}) ->
+    {reply, ok, St#state{arenas = Arenas}, Cf#config.arena_timeout}.
+
+-spec handle_cast(Request :: term(), State :: #state{}) ->
+                         {noreply, NewState :: #state{}} |
+                         {noreply, cleaning, timeout() | hibernate} |
+                         {noreply, NewState :: #state{}, timeout() | hibernate}|
+                         {stop, Reason :: term(), NewState :: #state{}}.
+handle_cast({interact, Pid, _Agent}, cleaning) ->
+    Pid ! {response, the_end},
+    {noreply, cleaning, ?CLOSING_TIMEOUT};
+
+handle_cast({interact, Pid, Agent}, St = #state{sim_params = SP,
+                                                config = Cf}) ->
     Waitlist = [Agent | St#state.waitlist],
-    Froms = [From | St#state.agentFroms],
+    Pids = [Pid | St#state.agent_pids],
     case length(Waitlist) of
         ?AGENT_THRESHOLD ->
             NewAgents =
@@ -95,26 +136,19 @@ handle_call({interact, Agent},
                                             mas_concurrent,
                                             SP,
                                             Cf),
-            respond(NewAgents, Froms, St#state.arenas, SP, Cf),
+            respond(NewAgents, Pids, St#state.arenas, SP, Cf),
 
             exometer:update([St#state.supervisor, St#state.interaction],
                             ?AGENT_THRESHOLD),
 
             {noreply, St#state{waitlist = [],
-                               agentFroms = []}, Cf#config.arena_timeout};
+                               agent_pids = []}, Cf#config.arena_timeout};
         _ ->
             {noreply,
-             St#state{agentFroms = Froms, waitlist = Waitlist},
+             St#state{agent_pids = Pids, waitlist = Waitlist},
              Cf#config.arena_timeout}
     end;
 
-handle_call({arenas, Arenas}, _From, St = #state{config = Cf}) ->
-    {reply, ok, St#state{arenas = Arenas}, Cf#config.arena_timeout}.
-
--spec handle_cast(Request :: term(), State :: #state{})
-                 -> {noreply, NewState :: #state{}} |
-                    {noreply, cleaning, timeout() | hibernate} |
-                    {stop, Reason :: term(), NewState :: #state{}}.
 handle_cast(close, _State) ->
     {noreply, cleaning, ?CLOSING_TIMEOUT}.
 
@@ -145,15 +179,14 @@ code_change(_OldVsn, State, _Extra) ->
 %%%===================================================================
 
 -spec respond([agent()], [pid()], arenas(), sim_params(), config()) -> list().
-respond(Agents, Froms, Arenas, SP, Cf) when length(Agents) >= length(Froms) ->
-    [gen_server:reply(From, Agent)
-     || {From, Agent} <- mas_misc_util:shortest_zip(Froms, Agents)],
+respond(Agents, Pids, Arenas, SP, Cf) when length(Agents) >= length(Pids) ->
+    [Pid ! {response, Agent}
+     || {Pid, Agent} <- mas_misc_util:shortest_zip(Pids, Agents)],
     [spawn(mas_conc_agent, start, [Agent, Arenas, SP, Cf])
-     || Agent <- lists:nthtail(length(Froms), Agents)];
+     || Agent <- lists:nthtail(length(Pids), Agents)];
 
-respond(Agents, Froms, _Arenas, _SimParams, _Config)
-  when length(Agents) =< length(Froms) ->
-    [gen_server:reply(From, Agent)
-     || {From, Agent} <- mas_misc_util:shortest_zip(Froms, Agents)],
-    [gen_server:reply(From, close)
-     || From <- lists:nthtail(length(Agents), Froms)].
+respond(Agents, Pids, _Arenas, _SP, _Cf) when length(Agents) =< length(Pids) ->
+    [Pid ! {response, Agent}
+     || {Pid, Agent} <- mas_misc_util:shortest_zip(Pids, Agents)],
+    [Pid ! {response, close}
+     || Pid <- lists:nthtail(length(Agents), Pids)].
