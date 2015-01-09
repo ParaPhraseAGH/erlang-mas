@@ -43,33 +43,50 @@ close(Pid) ->
 
 -spec init(term()) -> {ok,state()} |
                       {ok,state(),non_neg_integer()}.
-init([SP, Cf]) ->
+init([SP, Cf = #config{write_interval = Int}]) ->
     mas_misc_util:seed_random(),
     Interactions = mas_misc_util:determine_behaviours(Cf),
-    ArenaList = [{Interaction, mas_conc_arena:start_link(self(), Interaction, SP, Cf)} || Interaction <- Interactions],
+    ArenaList = [{Interaction, mas_conc_arena:start_link(self(),
+                                                         Interaction,
+                                                         SP,
+                                                         Cf)}
+                 || Interaction <- Interactions],
+
+    exometer:new([self(), msg_queue_length],
+                 mas_msg_queue_len,
+                 [{sample_interval, Int}, {arena_pids, ArenaList}]),
+    exometer_report:subscribe(mas_reporter,
+                              [self(), msg_queue_length],
+                              msg_lengths,
+                              Int),
     Arenas = dict:from_list(ArenaList),
-    [ok = mas_conc_arena:giveArenas(Pid, Arenas) || {_Interaction, Pid} <- ArenaList],
+    [ok = mas_conc_arena:giveArenas(Pid, Arenas)
+     || {_Interaction, Pid} <- ArenaList],
     mas_io_util:printArenas(ArenaList),
     {ok, #state{arenas = Arenas, config = Cf, sim_params = SP}}.
 
 
--spec handle_call(term(),{pid(),term()},state()) -> {reply,term(),state()} |
-                                                    {reply,term(),state(),hibernate | infinity | non_neg_integer()} |
-                                                    {noreply,state()} |
-                                                    {noreply,state(),hibernate | infinity | non_neg_integer()} |
-                                                    {stop,term(),term(),state()} |
-                                                    {stop,term(),state()}.
+-spec handle_call(term(),{pid(),term()},state()) ->
+                         {reply,term(),state()} |
+                         {reply,term(),state(),hibernate | infinity | non_neg_integer()} |
+                         {noreply,state()} |
+                         {noreply,state(),hibernate | infinity | non_neg_integer()} |
+                         {stop,term(),term(),state()} |
+                         {stop,term(),state()}.
 handle_call(close, _From, St) ->
     [mas_conc_arena:close(Pid) || {_Name,Pid} <- dict:to_list(St#state.arenas)],
+    exometer_report:unsubscribe_all(mas_reporter, [self(), msg_queue_length]),
+    exometer:delete([self(), msg_queue_length]),
     {stop, normal, ok, St}.
 
 -spec handle_cast(term(),state()) -> {noreply,state()} |
                                      {noreply,state(),hibernate | infinity | non_neg_integer()} |
                                      {stop,term(),state()}.
 
-handle_cast(go, St = #state{config = Cf, sim_params = SP}) ->
+handle_cast(go, St = #state{config = Cf, sim_params = SP, arenas = Arenas}) ->
     Agents = mas_misc_util:generate_population(SP, Cf),
-    _InitPopulation = [spawn(mas_conc_agent, start, [A, St#state.arenas, SP, Cf]) || A <- Agents],
+    _InitPopulation = [spawn(mas_conc_agent, start, [A, Arenas, SP, Cf])
+                       || A <- Agents],
     {noreply, St}.
 
 

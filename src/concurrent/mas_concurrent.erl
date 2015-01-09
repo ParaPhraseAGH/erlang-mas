@@ -19,6 +19,9 @@
 start(Time, SP, Cf = #config{islands = Islands}) ->
     mas_misc_util:clear_inbox(),
     mas_topology:start_link(self(), Islands, Cf#config.topology),
+    exometer_admin:set_default(['_'],
+                               mas_msg_queue_len,
+                               [{module, mas_msg_queue_len}]),
     Supervisors = [mas_conc_supervisor:start(SP, Cf)
                    || _ <- lists:seq(1, Islands)],
     mas_misc_util:initialize_subscriptions(Supervisors, Cf),
