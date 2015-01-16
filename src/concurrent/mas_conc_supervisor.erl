@@ -62,9 +62,11 @@ init([SP, Cf]) ->
 
 -spec handle_call(term(),{pid(),term()},state()) ->
                          {reply,term(),state()} |
-                         {reply,term(),state(),hibernate | infinity | non_neg_integer()} |
+                         {reply,term(),state(),hibernate | infinity
+                          | non_neg_integer()} |
                          {noreply,state()} |
-                         {noreply,state(),hibernate | infinity | non_neg_integer()} |
+                         {noreply,state(),hibernate | infinity
+                          | non_neg_integer()} |
                          {stop,term(),term(),state()} |
                          {stop,term(),state()}.
 handle_call(close, _From, St) ->
@@ -73,7 +75,8 @@ handle_call(close, _From, St) ->
 
 -spec handle_cast(term(),state()) ->
                          {noreply,state()} |
-                         {noreply,state(),hibernate | infinity | non_neg_integer()} |
+                         {noreply,state(),hibernate | infinity
+                          | non_neg_integer()} |
                          {stop,term(),state()}.
 
 handle_cast(go, St = #state{config = Cf, sim_params = SP}) ->
@@ -86,7 +89,8 @@ handle_cast(go, St = #state{config = Cf, sim_params = SP}) ->
 
 -spec handle_info(term(),state()) ->
                          {noreply,state()} |
-                         {noreply,state(),hibernate | infinity | non_neg_integer()} |
+                         {noreply,state(),hibernate | infinity
+                          | non_neg_integer()} |
                          {stop,term(),state()}.
 handle_info(timeout, State) ->
     {stop, timeout, State}.
