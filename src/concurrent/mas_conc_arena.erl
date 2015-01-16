@@ -2,7 +2,7 @@
 -behaviour(gen_server).
 
 %% API
--export([start_link/4, giveArenas/2, call/2, close/1]).
+-export([start_link/4, give_arenas/2, call/2, close/1]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2,
@@ -42,15 +42,14 @@ start_link(Supervisor, Interaction, SP, Cf) ->
 %% @doc Sends a request with given agent to this arena
 -spec call(pid(), agent()) -> agent() | close.
 call(Pid, Agent) ->
-    %%     gen_server:call(Pid, {interact, Agent}, infinity).
     gen_server:cast(Pid, {interact, self(), Agent}),
     receive
         {response, Reply} ->
             Reply
     end.
 
--spec giveArenas(pid(), arenas()) -> ok.
-giveArenas(Pid, Arenas) ->
+-spec give_arenas(pid(), arenas()) -> ok.
+give_arenas(Pid, Arenas) ->
     gen_server:call(Pid, {arenas, Arenas}, infinity).
 
 -spec close(pid()) -> ok.
@@ -84,34 +83,6 @@ init([Supervisor, Interaction, SP, Cf]) ->
                          {stop, Reason :: term(), Reply :: term(),
                           NewState :: #state{}} |
                          {stop, Reason :: term(), NewState :: #state{}}.
-
-%% handle_call({interact, _Agent}, _From, cleaning) ->
-%%     {reply, the_end, cleaning, ?CLOSING_TIMEOUT};
-%%
-%% handle_call({interact, Agent},
-%%             From,
-%%             St = #state{sim_params = SP, config = Cf}) ->
-%%     Waitlist = [Agent | St#state.waitlist],
-%%     Froms = [From | St#state.agentFroms],
-%%     case length(Waitlist) of
-%%         ?AGENT_THRESHOLD ->
-%%             NewAgents =
-%%                 mas_misc_util:meeting_proxy({St#state.interaction, Waitlist},
-%%                                             mas_concurrent,
-%%                                             SP,
-%%                                             Cf),
-%%             respond(NewAgents, Froms, St#state.arenas, SP, Cf),
-%%
-%%             exometer:update([St#state.supervisor, St#state.interaction],
-%%                             ?AGENT_THRESHOLD),
-%%
-%%             {noreply, St#state{waitlist = [],
-%%                                agentFroms = []}, Cf#config.arena_timeout};
-%%         _ ->
-%%             {noreply,
-%%              St#state{agentFroms = Froms, waitlist = Waitlist},
-%%              Cf#config.arena_timeout}
-%%     end;
 
 handle_call({arenas, Arenas}, _From, St = #state{config = Cf}) ->
     {reply, ok, St#state{arenas = Arenas}, Cf#config.arena_timeout}.
