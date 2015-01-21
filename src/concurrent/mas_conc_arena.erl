@@ -64,7 +64,7 @@ init([Supervisor, Interaction, SP, Cf]) ->
     {ok, #state{supervisor = Supervisor,
                 interaction = Interaction,
                 sim_params = SP,
-                config = Cf}, Cf#config.arena_timeout}.
+                config = Cf}}.
 
 
 -spec handle_call(Request :: term(),
@@ -100,16 +100,13 @@ handle_call({interact, Agent},
             exometer:update([St#state.supervisor, St#state.interaction],
                             ?AGENT_THRESHOLD),
 
-            {noreply, St#state{waitlist = [],
-                               agentFroms = []}, Cf#config.arena_timeout};
+            {noreply, St#state{waitlist = [], agentFroms = []}};
         _ ->
-            {noreply,
-             St#state{agentFroms = Froms, waitlist = Waitlist},
-             Cf#config.arena_timeout}
+            {noreply, St#state{agentFroms = Froms, waitlist = Waitlist}}
     end;
 
-handle_call({arenas, Arenas}, _From, St = #state{config = Cf}) ->
-    {reply, ok, St#state{arenas = Arenas}, Cf#config.arena_timeout}.
+handle_call({arenas, Arenas}, _From, St) ->
+    {reply, ok, St#state{arenas = Arenas}}.
 
 -spec handle_cast(Request :: term(), State :: #state{})
                  -> {noreply, NewState :: #state{}} |
