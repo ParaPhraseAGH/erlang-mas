@@ -61,8 +61,8 @@ options_specs() ->
      {write_interval,         undefined,  "write_interval",         {integer, 1000},
       "How often the logs are writen to output (in milliseconds)"},
 
-     {arena_timeout,          undefined,  "arena_timeout",          {integer, 5000},
-      "How long an arena should wait for agents to come before raising an error (in milliseconds or the atom infinity)"},
+     {arena_timeout,          undefined,  "arena_timeout",          {integer, 3000},
+      "How long an arena should wait for agents to come before performing a defective interaction"},
 
      {skel_workers,           $W,         "skel_workers",           {integer, 4},
       "Number of workers used in skel map skeleton."},
