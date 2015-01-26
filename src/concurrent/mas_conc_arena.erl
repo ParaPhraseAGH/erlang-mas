@@ -96,23 +96,13 @@ handle_cast({interact, Pid, _Agent}, cleaning) ->
     Pid ! {response, the_end},
     {noreply, cleaning, ?CLOSING_TIMEOUT};
 
-handle_cast({interact, Pid, Agent}, St = #state{sim_params = SP,
-                                                config = Cf}) ->
+handle_cast({interact, Pid, Agent}, St = #state{config = Cf}) ->
     Waitlist = [Agent | St#state.waitlist],
     Pids = [Pid | St#state.agent_pids],
     case length(Waitlist) of
         ?AGENT_THRESHOLD ->
-            NewAgents =
-                mas_misc_util:meeting_proxy({St#state.interaction, Waitlist},
-                                            mas_concurrent,
-                                            SP,
-                                            Cf),
-            respond(NewAgents, Pids, St#state.arenas, SP, Cf),
-
-            exometer:update([St#state.supervisor, St#state.interaction],
-                            ?AGENT_THRESHOLD),
-
-            {noreply, St#state{waitlist = [], agent_pids = []}};
+            NewState = perform_interaction(Waitlist, Pids, St),
+            {noreply, NewState};
         _ ->
             {noreply,
              St#state{agent_pids = Pids, waitlist = Waitlist},
@@ -130,23 +120,14 @@ handle_cast(close, _State) ->
 handle_info(timeout, cleaning) ->
     {stop, normal, cleaning};
 
-handle_info(timeout, St = #state{config = Cf, sim_params = SP}) ->
-    {Waitlist, Pids} = {St#state.waitlist, St#state.agent_pids},
+handle_info(timeout, St = #state{waitlist = Waitlist, agent_pids = Pids}) ->
     case length(Waitlist) of
         0 ->
             {noreply, St};
-        N ->
+        _ ->
             io:format("Performing a defective interaction~n"),
-            NewAgents =
-                mas_misc_util:meeting_proxy({St#state.interaction, Waitlist},
-                    mas_concurrent,
-                    SP,
-                    Cf),
-            respond(NewAgents, Pids, St#state.arenas, SP, Cf),
-
-            exometer:update([St#state.supervisor, St#state.interaction], N),
-
-            {noreply, St#state{waitlist = [], agent_pids = []}}
+            NewState = perform_interaction(Waitlist, Pids, St),
+            {noreply, NewState}
     end.
 
 -spec terminate(Reason :: (normal | shutdown | {shutdown, term()} | term()),
@@ -164,15 +145,34 @@ code_change(_OldVsn, State, _Extra) ->
 %%% Internal functions
 %%%===================================================================
 
+-spec perform_interaction([agent()], [pid()], #state{}) -> #state{}.
+perform_interaction(Waitlist, Pids, St) ->
+    {Cf, SP} = {St#state.config, St#state.sim_params},
+    NrOfAgents = length(Waitlist),
+
+    NewAgents = mas_misc_util:meeting_proxy({St#state.interaction, Waitlist},
+                                            mas_concurrent,
+                                            SP,
+                                            Cf),
+
+    respond(NewAgents, Pids, St#state.arenas, SP, Cf),
+
+    exometer:update([St#state.supervisor, St#state.interaction], NrOfAgents),
+
+    St#state{waitlist = [], agent_pids = []}.
+
+
 -spec respond([agent()], [pid()], arenas(), sim_params(), config()) -> list().
 respond(Agents, Pids, Arenas, SP, Cf) when length(Agents) >= length(Pids) ->
     [Pid ! {response, Agent}
-     || {Pid, Agent} <- mas_misc_util:shortest_zip(Pids, Agents)],
+        || {Pid, Agent} <- mas_misc_util:shortest_zip(Pids, Agents)],
+
     [spawn(mas_conc_agent, start, [Agent, Arenas, SP, Cf])
-     || Agent <- lists:nthtail(length(Pids), Agents)];
+        || Agent <- lists:nthtail(length(Pids), Agents)];
 
 respond(Agents, Pids, _Arenas, _SP, _Cf) when length(Agents) =< length(Pids) ->
     [Pid ! {response, Agent}
-     || {Pid, Agent} <- mas_misc_util:shortest_zip(Pids, Agents)],
+        || {Pid, Agent} <- mas_misc_util:shortest_zip(Pids, Agents)],
+
     [Pid ! {response, close}
-     || Pid <- lists:nthtail(length(Agents), Pids)].
+        || Pid <- lists:nthtail(length(Agents), Pids)].
