@@ -114,7 +114,9 @@ handle_cast({interact, Pid, Agent}, St = #state{sim_params = SP,
 
             {noreply, St#state{waitlist = [], agent_pids = []}};
         _ ->
-            {noreply, St#state{agent_pids = Pids, waitlist = Waitlist}}
+            {noreply,
+             St#state{agent_pids = Pids, waitlist = Waitlist},
+             Cf#config.arena_timeout}
     end;
 
 handle_cast(close, _State) ->
@@ -128,8 +130,24 @@ handle_cast(close, _State) ->
 handle_info(timeout, cleaning) ->
     {stop, normal, cleaning};
 
-handle_info(timeout, State) ->
-    {stop, timeout, State}.
+handle_info(timeout, St = #state{config = Cf, sim_params = SP}) ->
+    {Waitlist, Pids} = {St#state.waitlist, St#state.agent_pids},
+    case length(Waitlist) of
+        0 ->
+            {noreply, St};
+        N ->
+            io:format("Performing a defective interaction~n"),
+            NewAgents =
+                mas_misc_util:meeting_proxy({St#state.interaction, Waitlist},
+                    mas_concurrent,
+                    SP,
+                    Cf),
+            respond(NewAgents, Pids, St#state.arenas, SP, Cf),
+
+            exometer:update([St#state.supervisor, St#state.interaction], N),
+
+            {noreply, St#state{waitlist = [], agent_pids = []}}
+    end.
 
 -spec terminate(Reason :: (normal | shutdown | {shutdown, term()} | term()),
                 State :: #state{}) -> term().
