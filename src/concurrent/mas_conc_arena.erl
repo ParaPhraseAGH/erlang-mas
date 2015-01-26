@@ -21,7 +21,7 @@
 -define(CLOSING_TIMEOUT, 2000).
 -define(AGENT_THRESHOLD, 2). %% TODO this should be user-configurable and use case dependent
 
--type state() :: state().
+-type state() :: #state{}.
 -type agent() :: mas:agent().
 -type sim_params() :: mas:sim_params().
 -type arenas() :: mas_conc_supervisor:arenas().
