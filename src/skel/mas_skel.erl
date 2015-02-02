@@ -19,12 +19,12 @@
 -spec start(Time::pos_integer(), sim_params(), config()) -> ok.
 start(Time, SP, Cf = #config{islands = Islands, agent_env = Env}) ->
     mas_topology:start_link(self(), Islands, Cf#config.topology),
-    mas_misc_util:initialize_subscriptions(lists:seq(1, Islands), Cf),
     mas_misc_util:seed_random(),
     mas_misc_util:clear_inbox(),
     Population = [{I, Env:initial_agent(SP)} ||
                      _ <- lists:seq(1, Cf#config.population_size),
                      I <- lists:seq(1, Islands)],
+    mas_misc_util:initialize_subscriptions(lists:seq(1, Islands), Cf),
     {_Time, Result} = timer:tc(fun main/4, [Population, Time, SP, Cf]),
     mas_misc_util:close_subscriptions(lists:seq(1, Islands), Cf),
     mas_topology:close(),
