@@ -43,12 +43,12 @@ exometer_init(Options) ->
 
 -spec exometer_report(exometer_report:metric(),
                       exometer_report:datapoint(),
-                      exometer_report:value(),
                       exometer_report:extra(),
+                      exometer_report:value(),
                       exometer_report:mod_state()) -> {ok, state()}.
-exometer_report(Metric, _Datapoint, _Value, Extra, St = #state{fds = Dict}) ->
+exometer_report(Metric, _Datapoint, _Extra, Value, St = #state{fds = Dict}) ->
     FD = dict:fetch(Metric, Dict),
-    file:write(FD, io_lib:fwrite("~p ~w\n", [Metric, Extra])),
+    file:write(FD, io_lib:fwrite("~p ~w\n", [Metric, Value])),
     {ok, St}.
 
 
