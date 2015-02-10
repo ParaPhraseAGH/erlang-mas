@@ -69,15 +69,16 @@ main(Population, Time, SP, Cf) ->
             end,
 
     TMGLS = fun (Agents) ->
+                    seed_random_once_per_process(),
+                    Shuffled = mas_misc_util:shuffle(lists:flatten(Agents)),
                     Tagged = lists:map(TagFun,
-                                       Agents),
+                                       Shuffled),
                     Migrated = lists:map(MigrateFun,
                                          Tagged),
                     Grouped = GroupFun(Migrated),
                     LogFun(Grouped),
                     Split(Grouped)
             end,
-
 
     Work = {seq, fun({{Home, Behaviour}, Agents}) ->
                          seed_random_once_per_process(),
@@ -89,11 +90,6 @@ main(Population, Time, SP, Cf) ->
                          [{Home, A} || A <- NewAgents]
                  end },
 
-    Shuffle = {seq, fun(Agents) ->
-                            seed_random_once_per_process(),
-                            mas_misc_util:shuffle(lists:flatten(Agents))
-                    end},
-
     Map = case Cf#config.skel_pull of
               enable ->
                   {map, [Work], Workers, pull};
@@ -101,18 +97,16 @@ main(Population, Time, SP, Cf) ->
                   {map, [Work], Workers}
           end,
 
-    Workflow = {pipe, [{seq, TMGLS},
-                       Map,
-                       Shuffle]},
+    Workflow = {pipe, [{seq, TMGLS}, Map]},
 
-    [FinalIslands] = skel:do([{feedback,
+    FinalIslands = skel:do([{feedback,
                                [Workflow],
                                _While = fun(_Agents) ->
                                                 os:timestamp() < EndTime
                                         end}],
                              [Population]),
     _FinalAgents =
-        [Agent || {_Island, Agent} <- FinalIslands].
+        [Agent || {_Island, Agent} <- lists:flatten(FinalIslands)].
 
 
 %% ====================================================================
