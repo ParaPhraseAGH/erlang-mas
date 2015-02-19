@@ -65,21 +65,23 @@ main(Population, Time, SP, Cf) ->
                                           Agents
                                   end,
 
-                      Destinated = [{mas_topology:getDestination(A), A}
+                      Destinated = [{mas_topology:getDestination(A),
+                                     make_ref(),
+                                     A}
                                     || A <- Emigrants],
 
-                      Leftovers = insert_emigrants(Destinated),
+                      ets:insert(migration_ets, Destinated),
 
-                      Immigrants = ets:lookup(migration_ets, IsNo),
+                      WrappedImmigrants = ets:lookup(migration_ets, IsNo),
 
                       [true = ets:delete_object(migration_ets, Imm)
-                       || Imm <- Immigrants],
+                       || Imm <- WrappedImmigrants],
 
-                      Im = [A || {_Island, A} <- Immigrants],
+                      Immigrants = [A || {_IsNo, _Ref, A} <- WrappedImmigrants],
 
                       NewIslands = lists:keydelete(migration, 1, Island),
 
-                      {IsNo, [{migration, Leftovers ++ Im} | NewIslands]}
+                      {IsNo, [{migration, Immigrants} | NewIslands]}
               end,
 
     Work = fun({IsNo, Island}) ->
@@ -116,13 +118,3 @@ main(Population, Time, SP, Cf) ->
 %% ====================================================================
 %% Internal functions
 %% ====================================================================
-
--spec insert_emigrants([{pos_integer(), mas:agent()}]) -> [mas:agent()].
-insert_emigrants(Emigrants) ->
-    case ets:insert_new(migration_ets, Emigrants) of
-        true ->
-            [];
-        false ->
-            Res = [ets:insert_new(migration_ets, E) || E <- Emigrants],
-            [E || {false, {_Home, E}} <- lists:zip(Res, Emigrants)]
-    end.
