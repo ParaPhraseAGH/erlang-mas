@@ -1,7 +1,8 @@
 %% @author jstypka <jasieek@student.agh.edu.pl>
 %% @version 1.1
 -module(mas_skel).
--export([start/3]).
+-export([start/3,
+         seed_random_once_per_process/0]).
 -include ("mas.hrl").
 
 -type sim_params() :: mas:sim_params().
@@ -39,7 +40,7 @@ main(Population, Time, SP, Cf) ->
     Workers = Cf#config.skel_workers,
 
     Tag = fun({IsNo, Island}) ->
-                  mas_skel_old:seed_random_once_per_process(),
+                  seed_random_once_per_process(),
                   Tagged = [{mas_misc_util:behaviour_proxy(Agent, SP, Cf),
                              Agent}
                             || Agent <- Island],
@@ -118,3 +119,13 @@ main(Population, Time, SP, Cf) ->
 %% ====================================================================
 %% Internal functions
 %% ====================================================================
+
+-spec seed_random_once_per_process() -> ok.
+seed_random_once_per_process() ->
+    case get(was_seeded) of
+        undefined ->
+            mas_misc_util:seed_random(),
+            put(was_seeded, true);
+        true ->
+            ok
+    end.
