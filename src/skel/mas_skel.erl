@@ -99,7 +99,8 @@ main(Population, Time, SP, Cf) ->
 %% Internal functions
 %% ====================================================================
 
--spec emigrate([{mas:agent_behaviour(), [mas:agent()]}]) -> true.
+-spec emigrate([{mas:agent_behaviour(), [mas:agent()]}]) ->
+                      [{mas:agent_behaviour(), [mas:agent()]}].
 emigrate(Island) ->
     Emigrants = case lists:keyfind(migration, 1, Island) of
                     false ->
