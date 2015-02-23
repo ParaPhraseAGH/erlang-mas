@@ -59,30 +59,11 @@ main(Population, Time, SP, Cf) ->
 
 
     Migrate = fun({IsNo, Island}) ->
-                      Emigrants = case lists:keyfind(migration, 1, Island) of
-                                      false ->
-                                          [];
-                                      {migration, Agents} ->
-                                          Agents
-                                  end,
-
-                      Destinated = [{mas_topology:getDestination(A),
-                                     make_ref(),
-                                     A}
-                                    || A <- Emigrants],
-
-                      ets:insert(migration_ets, Destinated),
-
-                      WrappedImmigrants = ets:lookup(migration_ets, IsNo),
-
-                      [true = ets:delete_object(migration_ets, Imm)
-                       || Imm <- WrappedImmigrants],
-
-                      Immigrants = [A || {_IsNo, _Ref, A} <- WrappedImmigrants],
+                      emigrate(Island),
 
                       NewIslands = lists:keydelete(migration, 1, Island),
 
-                      {IsNo, [{migration, Immigrants} | NewIslands]}
+                      {IsNo, [{migration, immigrate(IsNo)} | NewIslands]}
               end,
 
     Work = fun({IsNo, Island}) ->
@@ -119,6 +100,31 @@ main(Population, Time, SP, Cf) ->
 %% ====================================================================
 %% Internal functions
 %% ====================================================================
+
+-spec emigrate([{mas:agent_behaviour(), [mas:agent()]}]) -> true.
+emigrate(Island) ->
+    Emigrants = case lists:keyfind(migration, 1, Island) of
+                    false ->
+                        [];
+                    {migration, Agents} ->
+                        Agents
+                end,
+
+    Destinated = [{mas_topology:getDestination(A), make_ref(), A}
+                  || A <- Emigrants],
+
+    ets:insert(migration_ets, Destinated).
+
+
+-spec immigrate(pos_integer()) -> [mas:agent()].
+immigrate(IsNo) ->
+    WrappedImmigrants = ets:lookup(migration_ets, IsNo),
+
+    [true = ets:delete_object(migration_ets, Imm)
+     || Imm <- WrappedImmigrants],
+
+    [A || {_IsNo, _Ref, A} <- WrappedImmigrants].
+
 
 -spec seed_random_once_per_process() -> ok.
 seed_random_once_per_process() ->
