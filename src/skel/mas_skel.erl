@@ -59,9 +59,7 @@ main(Population, Time, SP, Cf) ->
 
 
     Migrate = fun({IsNo, Island}) ->
-                      emigrate(Island),
-
-                      NewIslands = lists:keydelete(migration, 1, Island),
+                      NewIslands = emigrate(Island),
 
                       {IsNo, [{migration, immigrate(IsNo)} | NewIslands]}
               end,
@@ -113,7 +111,9 @@ emigrate(Island) ->
     Destinated = [{mas_topology:getDestination(A), make_ref(), A}
                   || A <- Emigrants],
 
-    ets:insert(migration_ets, Destinated).
+    ets:insert(migration_ets, Destinated),
+
+    lists:keydelete(migration, 1, Island).
 
 
 -spec immigrate(pos_integer()) -> [mas:agent()].
